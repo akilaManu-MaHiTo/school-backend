@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories\All\ComGrades;
 
 use App\Models\ComGrades;
@@ -21,6 +22,14 @@ class ComGradesRepository extends BaseRepository implements ComGradesInterface
         $this->model = $model;
     }
 
-
-
+    /**
+     * Check if a grade exists.
+     *
+     * @param int|string $grade
+     * @return bool
+     */
+    public function existsByGrade($grade): bool
+    {
+        return $this->model->where('grade', $grade)->exists();
+    }
 }

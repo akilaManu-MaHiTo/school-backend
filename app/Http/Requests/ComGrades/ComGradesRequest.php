@@ -23,7 +23,7 @@ class ComGradesRequest extends FormRequest
     {
         return [
             //
-            'grade' => 'required|string|max:255',
+            'grade' => 'required|integer|min:1|max:13|unique:com_grades,grade',
         ];
     }
 }
