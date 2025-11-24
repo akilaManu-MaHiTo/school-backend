@@ -14,6 +14,7 @@ use App\Http\Controllers\CommonControllers\OrganizationController;
 use App\Http\Controllers\CommonControllers\PersonTypeController;
 use App\Http\Controllers\CommonControllers\ResponsibleSectionController;
 use App\Http\Controllers\CommonControllers\UserTypeController;
+use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentInjuryTypeController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentRecordController;
@@ -95,6 +96,7 @@ use App\Http\Controllers\SustainabilityAppsControllers\SaSrMaterialityIssuesCont
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrMaterialityTypeController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrPillarsController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGController;
+
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGReportingRecodeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -234,3 +236,11 @@ Route::post('hr-divisions', [HrDivisionController::class, 'store']);
 // Supplier Types (OH MI PI)
 Route::get('supplier-type', [OhMiPiMiSupplierTypeController::class, 'index']);
 Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('grade', [ComGradesController::class, 'store']);
+    Route::get('grade', [ComGradesController::class, 'index']);
+    Route::post('grade/{gradeId}', [ComGradesController::class,'update'] );
+    Route::delete('grade/{gradeId}', [ComGradesController::class,'destroy'] );
+
+});

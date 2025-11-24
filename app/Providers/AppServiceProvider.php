@@ -19,6 +19,8 @@ use App\Repositories\All\ClinicalSuite\ClinicalSuiteInterface;
 use App\Repositories\All\ClinicalSuite\ClinicalSuiteRepository;
 use App\Repositories\All\ComDepartment\DepartmentInterface;
 use App\Repositories\All\ComDepartment\DepartmentRepository;
+use App\Repositories\All\ComGrades\ComGradesInterface;
+use App\Repositories\All\ComGrades\ComGradesRepository;
 use App\Repositories\All\ComJobPosition\JobPositionInterface;
 use App\Repositories\All\ComJobPosition\JobPositionRepository;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
@@ -245,6 +247,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+
         $this->app->bind(DepartmentInterface::class, DepartmentRepository::class);
         $this->app->bind(FactoryInterface::class, FactoryRepository::class);
         $this->app->bind(UserInterface::class, UserRepository::class);
@@ -275,7 +278,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SuplierNameInterface::class, SuplierNameRepository::class);
         $this->app->bind(ComOrganizationInterface::class, ComOrganizationRepository::class);
         $this->app->bind(SupplierTypeInterface::class, SupplierTypeRepository::class);
-   
 
+        $this->app->bind(ComGradesInterface::class, ComGradesRepository::class);
     }
 }
