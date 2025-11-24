@@ -17,6 +17,8 @@ use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelRepository;
 use App\Repositories\All\ClinicalSuite\ClinicalSuiteInterface;
 use App\Repositories\All\ClinicalSuite\ClinicalSuiteRepository;
+use App\Repositories\All\ComAcademicYear\ComAcademicYearInterface;
+use App\Repositories\All\ComAcademicYear\ComAcademicYearRepository;
 use App\Repositories\All\ComDepartment\DepartmentInterface;
 use App\Repositories\All\ComDepartment\DepartmentRepository;
 use App\Repositories\All\ComGrades\ComGradesInterface;
@@ -280,5 +282,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupplierTypeInterface::class, SupplierTypeRepository::class);
 
         $this->app->bind(ComGradesInterface::class, ComGradesRepository::class);
+        $this->app->bind(ComAcademicYearInterface::class, ComAcademicYearRepository::class);
+
     }
 }
