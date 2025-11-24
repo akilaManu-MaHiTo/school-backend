@@ -107,4 +107,19 @@ class ComGradesController extends Controller
             'data' => $updated
         ], 200);
     }
+    public function destroy(string $id)
+    {
+        $grade = $this->comGradesInterface->getById($id);
+        if ($grade === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Grade not found.'
+            ], 404);
+        }
+        $this->comGradesInterface->deleteById($id);
+        return response()->json([
+            'success' => true,
+            'message' => 'Grade deleted successfully.'
+        ], 200);
+    }
 }

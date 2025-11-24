@@ -240,4 +240,7 @@ Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
+    Route::post('grade/{gradeId}', [ComGradesController::class,'update'] );
+    Route::delete('grade/{gradeId}', [ComGradesController::class,'destroy'] );
+
 });
