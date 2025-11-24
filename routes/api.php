@@ -5,7 +5,7 @@ use App\Http\Controllers\api\CalculationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\ComAcademicYearsController;
+use App\Http\Controllers\AcademicControllers\ComAcademicYearsController;
 use App\Http\Controllers\CommonControllers\AssigneeLevelController;
 use App\Http\Controllers\CommonControllers\ComPermissionController;
 use App\Http\Controllers\CommonControllers\DepartmentController;
@@ -245,4 +245,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('grade/{gradeId}', [ComGradesController::class,'destroy'] );
 
     Route::post('year', [ComAcademicYearsController::class,'store']);
+    Route::get('year', [ComAcademicYearsController::class,'index']);
+    Route::post('year/{yearId}', [ComAcademicYearsController::class,'update']);
+    Route::delete('year/{yearId}', [ComAcademicYearsController::class,'destroy']);
 });

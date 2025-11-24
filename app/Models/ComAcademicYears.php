@@ -12,5 +12,6 @@ class ComAcademicYears extends Model
     protected $table = "com_academic_years";
     protected $fillable = [
         'year',
+        'status',
     ];
 }

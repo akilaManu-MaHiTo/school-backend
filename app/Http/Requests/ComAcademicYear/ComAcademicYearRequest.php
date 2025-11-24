@@ -23,7 +23,9 @@ class ComAcademicYearRequest extends FormRequest
     {
         return [
             //
-            'year' => 'required|integer|unique:com_academic_years,year',
+            'year' => 'required|integer',
+            'status'=> 'string',
+            'isFinishedYear'=> 'boolean',
         ];
     }
 }

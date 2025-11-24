@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\AcademicControllers;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Requests\ComAcademicYear\ComAcademicYearRequest;
 use App\Models\ComAcademicYears;
@@ -69,14 +71,44 @@ class ComAcademicYearsController extends Controller
     }
 
 
-    public function update(Request $request, ComAcademicYears $comAcademicYears)
+    public function update(ComAcademicYearRequest $request, $id)
     {
-        //
+        $data = $request->validated();
+        $data['isFinishedYear'] = isset($data['isFinishedYear']) ? (bool) $data['isFinishedYear'] : false;
+
+        $academicYear = $this->comAcademicYearInterface->findById($id);
+
+        if ($data['isFinishedYear'] === true) {
+            $status = 'Finished';
+        } else {
+            $status = 'Ongoing';
+        }
+
+        $academicYear->update([
+            'status' => $status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Academic year updated successfully.',
+            'data' => $academicYear,
+        ]);
     }
 
-
-    public function destroy(ComAcademicYears $comAcademicYears)
+    public function destroy(string $id)
     {
-        //
+
+        $year = $this->comAcademicYearInterface->getById($id);
+        if ($year === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Academic year not found.',
+            ], 404);
+        }
+        $this->comAcademicYearInterface->deleteById($id);
+        return response()->json([
+            'success' => true,
+            'message' => 'Academic Year Delete Successful'
+        ], 200);
     }
 }
