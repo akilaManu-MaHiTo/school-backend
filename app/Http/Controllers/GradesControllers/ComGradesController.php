@@ -19,6 +19,7 @@ class ComGradesController extends Controller
     public function index()
     {
         $grades = $this->comGradesInterface->All();
+        $grades = $grades->sortBy('grade')->values();
         return response()->json($grades, 200);
     }
 
