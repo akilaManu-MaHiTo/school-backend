@@ -25,7 +25,7 @@ class OrganizationRequest extends FormRequest
             'organizationFactoryName' => 'nullable|string',
             'logoUrl'                 => 'nullable|file|mimes:pdf,doc,docx,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,webp,svg',
             'removeLogo'              => 'nullable|string',
-            'colorPallet'             => 'nullable|array',
+            'colorPallet'             => 'nullable|string',
             'insightImage'            => 'nullable|file|mimes:pdf,doc,docx,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,webp,svg',
             'removeInsightImage'      => 'nullable|string',
             'insightDescription'      => 'nullable|string',
