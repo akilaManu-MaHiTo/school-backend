@@ -129,53 +129,59 @@ class ComSubjectsController extends Controller
      */
     public function update(ComSubjectsRequest $request, $id)
     {
-        $comSubject = $this->comSubjectsInterface->findById($id);
-        if (!$comSubject) {
+        $subject = $this->comSubjectsInterface->findById($id);
+        if (!$subject) {
             return response()->json([
                 'success' => false,
                 'message' => 'Subject not found.'
             ], 404);
         }
+
         $data = $request->validated();
-        $comSubject = isset($data['subjectName']) ? $data['subjectName'] : null;
 
-        if ($comSubject === null || trim($comSubject) === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject name is required.',
-            ], 422);
+        $newName = $data['subjectName'] ?? null;
+        $newCode = $data['subjectCode'] ?? null;
+
+        // Check subjectName duplicate only if subjectName is being updated
+        if ($newName && $newName !== $subject->subjectName) {
+
+            $nameExists = ComSubjects::where('subjectName', $newName)
+                ->where('id', '!=', $id) // exclude current record
+                ->exists();
+
+            if ($nameExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject name already exists.'
+                ], 422);
+            }
         }
 
-        $exists = false;
-        $codeExists = false;
-        if (method_exists($this->comSubjectsInterface, 'existsBySubjectName')) {
-            $codeExists = $this->comSubjectsInterface->existsBySubject($comSubject);
-        } elseif (method_exists($this->comSubjectsInterface, 'existsBySubjectCode')) {
-            $exists = $this->comSubjectsInterface->existByCode($comSubject);
-        } else {
-            $exists = ComSubjects::where('subjectName', $comSubject)->exists();
-            $codeExists = ComSubjects::where('subjectCode', $comSubject)->exists();
+        // Check subjectCode duplicate only if subjectCode is being updated
+        if ($newCode && $newCode !== $subject->subjectCode) {
+
+            $codeExists = ComSubjects::where('subjectCode', $newCode)
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($codeExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject code already exists.'
+                ], 422);
+            }
         }
 
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject already exists.',
-            ], 422);
-        } else if ($codeExists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject code already exists.',
-            ], 422);
-        }
+        // Perform update
+        $updated = $this->comSubjectsInterface->update($id, $data);
 
-        $comSubject = $this->comSubjectsInterface->update($id, $data);
         return response()->json([
             'success' => true,
             'message' => 'Subject updated successfully.',
-            'data' => $comSubject
-        ], 201);
+            'data' => $updated
+        ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.
