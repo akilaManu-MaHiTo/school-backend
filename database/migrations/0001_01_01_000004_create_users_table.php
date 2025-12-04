@@ -11,11 +11,11 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->nullable();
             $table->string('userName')->unique();
-            $table->string('email')->unique();
+            $table->string('email')->nullable()->unique();
             $table->string('password');
-            $table->boolean('isCompanyEmployee')->default(false);
+            $table->enum('employeeType', ['Student', 'Teacher', 'Parent'])->default('Student');
             $table->string('employeeNumber')->nullable()->unique();
             $table->string('mobile')->nullable()->unique();
             $table->rememberToken();
@@ -24,14 +24,10 @@ return new class extends Migration
             $table->boolean('emailVerifiedAt')->default(false);
             $table->unsignedBigInteger('userType')->nullable()->default(2);
             $table->foreign('userType')->references('id')->on('com_permissions')->onDelete('restrict');
-            $table->string('department')->nullable();
-            $table->string('jobPosition')->nullable();
-            $table->json('responsibleSection')->nullable();
-            $table->string('gender')->nullable();
             $table->integer('assigneeLevel')->default(2)->nullable();
             $table->json('profileImage')->nullable();
             $table->boolean('availability')->default(true);
-            $table->json('assignedFactory')->nullable();
+            $table->enum('gender', ['Male', 'Female'])->nullable();
             $table->timestamps();
         });
 
