@@ -1,6 +1,7 @@
 <?php
 namespace App\Providers;
 
+use App\Models\ComSubjects;
 use App\Repositories\All\AccidentCategory\AccidentCategoryInterface;
 use App\Repositories\All\AccidentCategory\AccidentCategoryRepository;
 use App\Repositories\All\AccidentInjuryType\AccidentInjuryTypeInterface;
@@ -23,6 +24,8 @@ use App\Repositories\All\ComDepartment\DepartmentInterface;
 use App\Repositories\All\ComDepartment\DepartmentRepository;
 use App\Repositories\All\ComGrades\ComGradesInterface;
 use App\Repositories\All\ComGrades\ComGradesRepository;
+use App\Repositories\All\ComClassMng\ComClassMngInterface;
+use App\Repositories\All\ComClassMng\ComClassMngRepository;
 use App\Repositories\All\ComJobPosition\JobPositionInterface;
 use App\Repositories\All\ComJobPosition\JobPositionRepository;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
@@ -33,6 +36,8 @@ use App\Repositories\All\ComPersonType\PersonTypeInterface;
 use App\Repositories\All\ComPersonType\PersonTypeRepository;
 use App\Repositories\All\ComResponsibleSection\ComResponsibleSectionInterface;
 use App\Repositories\All\ComResponsibleSection\ComResponsibleSectionRepository;
+use App\Repositories\All\ComSubjects\ComSubjectsInterface;
+use App\Repositories\All\ComSubjects\ComSubjectsRepository;
 use App\Repositories\All\ComUserType\UserTypeInterface;
 use App\Repositories\All\ComUserType\UserTypeRepository;
 use App\Repositories\All\CsConsultingDoctor\ConsultingInterface;
@@ -282,7 +287,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupplierTypeInterface::class, SupplierTypeRepository::class);
 
         $this->app->bind(ComGradesInterface::class, ComGradesRepository::class);
+        $this->app->bind(ComClassMngInterface::class, ComClassMngRepository::class);
         $this->app->bind(ComAcademicYearInterface::class, ComAcademicYearRepository::class);
+        $this->app->bind(ComSubjectsInterface::class, ComSubjectsRepository::class);
 
     }
 }
