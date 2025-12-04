@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -26,7 +27,6 @@ class RegisteredUserController extends Controller
     public function store(RegisterRequest $request)
     {
         $validatedData                      = $request->validated();
-        $validatedData['isCompanyEmployee'] = (bool) $validatedData['isCompanyEmployee'];
         $validatedData['password']          = Hash::make($validatedData['password']);
 
         $user = $this->userInterface->create($validatedData);

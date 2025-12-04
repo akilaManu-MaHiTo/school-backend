@@ -17,20 +17,15 @@ class User extends Authenticatable
         'userName',
         'email',
         'password',
-        'isCompanyEmployee',
+        'employeeType',
         'employeeNumber',
         'mobile',
         'emailVerifiedAt',
         'otp',
         'userType',
-        'gender',
-        'department',
-        'jobPosition',
-        'responsibleSection',
         'assigneeLevel',
         'profileImage',
         'availability',
-        'assignedFactory',
 
     ];
 
