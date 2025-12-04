@@ -15,6 +15,7 @@ use App\Http\Controllers\CommonControllers\OrganizationController;
 use App\Http\Controllers\CommonControllers\PersonTypeController;
 use App\Http\Controllers\CommonControllers\ResponsibleSectionController;
 use App\Http\Controllers\CommonControllers\UserTypeController;
+use App\Http\Controllers\SubjectControllers\ComSubjectsController;
 use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentInjuryTypeController;
@@ -248,4 +249,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('year', [ComAcademicYearsController::class,'index']);
     Route::post('year/{yearId}', [ComAcademicYearsController::class,'update']);
     Route::delete('year/{yearId}', [ComAcademicYearsController::class,'destroy']);
+
+    Route::post('subject', [ComSubjectsController::class,'store']);
+    Route::get('subject', [ComSubjectsController::class,'index']);
+    Route::post('subject/{subjectId}', [ComSubjectsController::class,'update']);
+    Route::delete('subject/{subjectId}', [ComSubjectsController::class,'destroy'] );
 });
