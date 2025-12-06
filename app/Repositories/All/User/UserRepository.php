@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories\All\User;
 
 use App\Models\User;
@@ -42,4 +43,47 @@ class UserRepository extends BaseRepository implements UserInterface
             ->get();
     }
 
+    public function searchTeachers($keyword)
+    {
+        return User::where('employeeType', 'Teacher')
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%$keyword%")
+                    ->orWhere('userName', 'LIKE', "%$keyword%")
+                    ->orWhere('email', 'LIKE', "%$keyword%");
+            })
+            ->get();
+    }
+
+    public function searchParents($keyword)
+    {
+        return User::where('employeeType', 'Parent')
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%$keyword%")
+                    ->orWhere('userName', 'LIKE', "%$keyword%")
+                    ->orWhere('email', 'LIKE', "%$keyword%");
+            })
+            ->get();
+    }
+
+    public function searchStudents($keyword)
+    {
+        return User::where('employeeType', 'Student')
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%$keyword%")
+                    ->orWhere('userName', 'LIKE', "%$keyword%")
+                    ->orWhere('email', 'LIKE', "%$keyword%");
+            })
+            ->get();
+    }
+
+    public function searchStaffs($keyword)
+    {
+        return User::where('employeeType', 'Staff')
+            ->where(function ($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%$keyword%")
+                    ->orWhere('userName', 'LIKE', "%$keyword%")
+                    ->orWhere('email', 'LIKE', "%$keyword%");
+            })
+            ->get();
+    }
 }

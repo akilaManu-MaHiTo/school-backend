@@ -132,7 +132,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users', [AdminController::class, 'index']);
     Route::post('users/{id}/update', [AdminController::class, 'update']);
     Route::get('users-assignee-level', [AdminController::class, 'assigneeLevel']);
-
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -165,7 +164,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('chemical-dashboard/{Year}/all-summary', [SaCmPurchaseInventoryRecodeController::class, 'getAllSummary']);
     Route::get('chemical-dashboard/{startDate}/{endDate}/{division}/category-and-classification', [SaCmPurchaseInventoryRecodeController::class, 'getCategoryAndClassification']);
     Route::get('chemical-dashboard/{startDate}/{endDate}/{division}/do-you-have-msds', [SaCmPurchaseInventoryRecodeController::class, 'getDoYouHaveMsdsPercentage']);
-
 });
 
 Route::get('user-permissions', [ComPermissionController::class, 'index']);
@@ -243,23 +241,29 @@ Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
-    Route::post('grade/{gradeId}', [ComGradesController::class,'update'] );
-    Route::delete('grade/{gradeId}', [ComGradesController::class,'destroy'] );
+    Route::post('grade/{gradeId}', [ComGradesController::class, 'update']);
+    Route::delete('grade/{gradeId}', [ComGradesController::class, 'destroy']);
 
-    Route::post('year', [ComAcademicYearsController::class,'store']);
-    Route::get('year', [ComAcademicYearsController::class,'index']);
-    Route::post('year/{yearId}', [ComAcademicYearsController::class,'update']);
-    Route::delete('year/{yearId}', [ComAcademicYearsController::class,'destroy']);
+    Route::post('year', [ComAcademicYearsController::class, 'store']);
+    Route::get('year', [ComAcademicYearsController::class, 'index']);
+    Route::post('year/{yearId}', [ComAcademicYearsController::class, 'update']);
+    Route::delete('year/{yearId}', [ComAcademicYearsController::class, 'destroy']);
 
-    Route::post('subject', [ComSubjectsController::class,'store']);
-    Route::get('subject', [ComSubjectsController::class,'index']);
-    Route::post('subject/{subjectId}', [ComSubjectsController::class,'update']);
-    Route::delete('subject/{subjectId}', [ComSubjectsController::class,'destroy'] );
+    Route::post('subject', [ComSubjectsController::class, 'store']);
+    Route::get('subject', [ComSubjectsController::class, 'index']);
+    Route::post('subject/{subjectId}', [ComSubjectsController::class, 'update']);
+    Route::delete('subject/{subjectId}', [ComSubjectsController::class, 'destroy']);
 
     // Classes (ComClassMng)
-    Route::post('class', [ComClassMngController::class,'store']);
-    Route::get('class', [ComClassMngController::class,'index']);
-    Route::get('class/{id}', [ComClassMngController::class,'show']);
-    Route::post('class/{id}', [ComClassMngController::class,'update']);
-    Route::delete('class/{id}', [ComClassMngController::class,'destroy'] );
+    Route::post('class', [ComClassMngController::class, 'store']);
+    Route::get('class', [ComClassMngController::class, 'index']);
+    Route::get('class/{id}', [ComClassMngController::class, 'show']);
+    Route::post('class/{id}', [ComClassMngController::class, 'update']);
+    Route::delete('class/{id}', [ComClassMngController::class, 'destroy']);
+
+    Route::get('users/teacher/search', [UserController::class, 'searchTeacher']);
+    Route::get('users/parent/search', [UserController::class, 'searchParent']);
+    Route::get('users/student/search', [UserController::class, 'searchStudent']);
+    Route::get('users/staff/search', [UserController::class, 'searchStaff']);
+
 });
