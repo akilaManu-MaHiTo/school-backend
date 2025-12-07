@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,8 @@ class User extends Authenticatable
         'assigneeLevel',
         'profileImage',
         'availability',
+        'birthDate',
+        'address',
 
     ];
 

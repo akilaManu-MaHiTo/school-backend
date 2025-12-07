@@ -203,4 +203,11 @@ class ComSubjectsController extends Controller
             'message' => 'Subject deleted successfully.'
         ], 200);
     }
+
+    public function getSubjects()
+    {
+        $comSubjects = $this->comSubjectsInterface->All();
+        $comSubjects = $comSubjects->sortBy('subjectName')->values();
+        return response()->json($comSubjects, 200);
+    }
 }

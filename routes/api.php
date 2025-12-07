@@ -17,6 +17,7 @@ use App\Http\Controllers\CommonControllers\ResponsibleSectionController;
 use App\Http\Controllers\CommonControllers\UserTypeController;
 use App\Http\Controllers\SubjectControllers\ComSubjectsController;
 use App\Http\Controllers\ClassMngControllers\ComClassMngController;
+use App\Http\Controllers\ComTeacherProfile\ComTeacherProfileController;
 use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentInjuryTypeController;
@@ -255,6 +256,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('subject', [ComSubjectsController::class,'index']);
     Route::post('subject/{subjectId}', [ComSubjectsController::class,'update']);
     Route::delete('subject/{subjectId}', [ComSubjectsController::class,'destroy'] );
+    Route::get('all-subjects', [ComSubjectsController::class,'getSubjects']);
 
     // Classes (ComClassMng)
     Route::post('class', [ComClassMngController::class,'store']);
@@ -262,4 +264,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class/{id}', [ComClassMngController::class,'show']);
     Route::post('class/{id}', [ComClassMngController::class,'update']);
     Route::delete('class/{id}', [ComClassMngController::class,'destroy'] );
+
+    // Teacher profiles
+    Route::get('teacher-profiles', [ComTeacherProfileController::class, 'index']);
+    Route::post('teacher-profiles', [ComTeacherProfileController::class, 'store']);
+    Route::get('teacher-profiles/{id}', [ComTeacherProfileController::class, 'show']);
+    Route::post('teacher-profiles/{id}', [ComTeacherProfileController::class, 'update']);
+    Route::delete('teacher-profiles/{id}', [ComTeacherProfileController::class, 'destroy']);
 });

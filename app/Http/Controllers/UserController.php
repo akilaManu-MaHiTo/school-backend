@@ -7,6 +7,7 @@ use App\Notifications\EmailChangeOTPsend\SendOtpEmailChange;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
 use App\Repositories\All\ComPermission\ComPermissionInterface;
+use App\Repositories\All\ComTeacherProfile\ComTeacherProfileInterface;
 use App\Repositories\All\User\UserInterface;
 use App\Services\OrganizationService;
 use App\Services\ProfileImageService;
@@ -21,6 +22,8 @@ class UserController extends Controller
 
     protected $comPermissionInterface;
 
+    protected $comTeacherProfileInterface;
+
     protected $assigneeLevelInterface;
 
     protected $profileImageService;
@@ -29,10 +32,18 @@ class UserController extends Controller
 
     protected $comOrganizationInterface;
 
-    public function __construct(UserInterface $userInterface, ComPermissionInterface $comPermissionInterface, AssigneeLevelInterface $assigneeLevelInterface, ProfileImageService $profileImageService, ComOrganizationInterface $comOrganizationInterface, OrganizationService $organizationService)
-    {
+    public function __construct(
+        UserInterface $userInterface,
+        ComPermissionInterface $comPermissionInterface,
+        ComTeacherProfileInterface $comTeacherProfileInterface,
+        AssigneeLevelInterface $assigneeLevelInterface,
+        ProfileImageService $profileImageService,
+        ComOrganizationInterface $comOrganizationInterface,
+        OrganizationService $organizationService
+    ) {
         $this->userInterface = $userInterface;
         $this->comPermissionInterface = $comPermissionInterface;
+        $this->comTeacherProfileInterface = $comTeacherProfileInterface;
         $this->assigneeLevelInterface = $assigneeLevelInterface;
         $this->profileImageService = $profileImageService;
         $this->organizationService = $organizationService;
@@ -49,7 +60,6 @@ class UserController extends Controller
 
         $permission = $this->comPermissionInterface->getById($user->userType);
         $userData = $user->toArray();
-
         $profileImages = is_array($user->profileImage) ? $user->profileImage : json_decode($user->profileImage, true) ?? [];
 
         $signedImages = [];
@@ -60,7 +70,6 @@ class UserController extends Controller
                 'imageUrl' => $signed['signedUrl'] ?? null,
             ];
         }
-
         foreach ($profileImages as &$uri) {
             if (isset($document['gsutil_uri'])) {
                 $imageData = $this->profileImageService->getImageUrl($document['gsutil_uri']);
@@ -68,7 +77,6 @@ class UserController extends Controller
                 $document['fileName'] = $imageData['fileName'];
             }
         }
-
         $userData['profileImage'] = $signedImages;
 
         if ($permission) {
@@ -85,10 +93,37 @@ class UserController extends Controller
             ];
         }
 
+        $teacherProfiles = $this->comTeacherProfileInterface->getByColumn(
+            ['teacherId' => $user->id],
+            ['*'],
+            ['grade', 'subject', 'class']
+        );
+        $userData['userProfile'] = $teacherProfiles
+            ? $teacherProfiles->map(function ($profile) {
+                return [
+                    'id' => $profile->id,
+                    'academicYear' => $profile->academicYear,
+                    'academicMedium' => $profile->academicMedium,
+                    'grade' => $profile->grade ? [
+                        'id' => $profile->grade->id,
+                        'grade' => $profile->grade->grade,
+                    ] : null,
+                    'subject' => $profile->subject ? [
+                        'id' => $profile->subject->id,
+                        'subjectCode' => $profile->subject->subjectCode,
+                        'subjectName' => $profile->subject->subjectName,
+                    ] : null,
+                    'class' => $profile->class ? [
+                        'id' => $profile->class->id,
+                        'className' => $profile->class->className,
+                    ] : null,
+                    'createdAt' => $profile->created_at,
+                    'updatedAt' => $profile->updated_at,
+                ];
+            })->values()->toArray()
+            : [];
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
-
         $userData['assigneeLevelObject'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
-
         return response()->json($userData, 200);
     }
 
@@ -125,6 +160,37 @@ class UserController extends Controller
             }
 
             $userArray['profileImage'] = $signedImages;
+
+            $teacherProfiles = $this->comTeacherProfileInterface->getByColumn(
+                ['teacherId' => $user->id],
+                ['*'],
+                ['grade', 'subject', 'class']
+            );
+
+            $userArray['userProfile'] = $teacherProfiles
+                ? $teacherProfiles->map(function ($profile) {
+                    return [
+                        'id' => $profile->id,
+                        'academicYear' => $profile->academicYear,
+                        'academicMedium' => $profile->academicMedium,
+                        'grade' => $profile->grade ? [
+                            'id' => $profile->grade->id,
+                            'grade' => $profile->grade->grade,
+                        ] : null,
+                        'subject' => $profile->subject ? [
+                            'id' => $profile->subject->id,
+                            'subjectCode' => $profile->subject->subjectCode,
+                            'subjectName' => $profile->subject->subjectName,
+                        ] : null,
+                        'class' => $profile->class ? [
+                            'id' => $profile->class->id,
+                            'className' => $profile->class->className,
+                        ] : null,
+                        'createdAt' => $profile->created_at,
+                        'updatedAt' => $profile->updated_at,
+                    ];
+                })->values()->toArray()
+                : [];
 
             return $userArray;
         });
@@ -165,21 +231,24 @@ class UserController extends Controller
         }
 
         $existingImages = is_array($user->profileImage)
-        ? $user->profileImage
-        : json_decode($user->profileImage, true) ?? [];
+            ? $user->profileImage
+            : json_decode($user->profileImage, true) ?? [];
 
         if ($request->filled('removeDoc')) {
             foreach ($request->removeDoc as $removeDoc) {
                 $this->profileImageService->deleteImageFromGCS($removeDoc);
-                $existingImages = array_filter($existingImages, fn ($img) => $img !== $removeDoc);
+                $existingImages = array_filter($existingImages, fn($img) => $img !== $removeDoc);
             }
         }
 
+        $existingImages = array_values($existingImages);
+
+        $newImages = [];
         if ($request->hasFile('profileImage')) {
             foreach ($request->file('profileImage') as $file) {
                 $uploadResult = $this->profileImageService->uploadImageToGCS($file);
                 if ($uploadResult && isset($uploadResult['gsutil_uri'])) {
-                    $existingImages[] = $uploadResult['gsutil_uri'];
+                    $newImages[] = $uploadResult['gsutil_uri'];
                 }
             }
         }
@@ -187,7 +256,12 @@ class UserController extends Controller
         $user->name = $request->input('name', $user->name);
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
-        $user->profileImage = $existingImages;
+        $user->email = $request->input('email', $user->email);
+        $user->birthDate = $request->input('birthDate', $user->birthDate);
+        $user->address = $request->input('address', $user->address);
+        $user->profileImage = ! empty($newImages)
+            ? array_values($newImages)
+            : array_values($existingImages);
 
         $user->save();
 
