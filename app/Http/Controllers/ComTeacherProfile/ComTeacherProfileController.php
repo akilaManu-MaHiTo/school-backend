@@ -32,63 +32,38 @@ class ComTeacherProfileController extends Controller
         Log::info('TeacherProfile.store: Incoming request', [
             'payload' => $request->all()
         ]);
-
         $user = Auth::user();
-
         if (! $user) {
-            Log::warning('TeacherProfile.store: Unauthorized request');
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-
-        Log::info('TeacherProfile.store: Authenticated user', [
-            'userId' => $user->id,
-            'email'  => $user->email,
-        ]);
-
         $userId = $user->id;
+        $userType = $user->employeeType;
 
-        // Get validated data
         $data = $request->validated();
         $data['createdByUser'] = $userId;
         $data['teacherId'] = $userId;
 
-        Log::info('TeacherProfile.store: Validated + prepared data', [
-            'data' => $data
-        ]);
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
 
-        // Check duplicate
+            return response()->json(['message' => 'Teachers Only Can Create Teacher Profile'], 401);
+        }
+
         if ($this->teacherProfileInterface->isDuplicate($data)) {
-            Log::warning('TeacherProfile.store: Duplicate profile detected', [
-                'teacherId' => $userId
-            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Teacher profile already exists for the given combination.',
+                'message' => 'Teacher Academic Details Already Exists',
             ], 409);
         }
 
         try {
-            Log::info('TeacherProfile.store: Creating profile');
-
             $profile = $this->teacherProfileInterface->create($data);
-
-            Log::info('TeacherProfile.store: Profile created successfully', [
-                'profileId' => $profile->id
-            ]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Teacher profile created successfully.',
                 'data'    => $this->formatProfile($profile),
             ], 201);
         } catch (\Exception $e) {
-            Log::error('TeacherProfile.store: Error creating profile', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'data' => $data
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong while creating the teacher profile.',
@@ -122,12 +97,29 @@ class ComTeacherProfileController extends Controller
             ], 404);
         }
 
+
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userId = $user->id;
         $data = $request->validated();
+        $data['createdByUser'] = $userId;
+        $data['teacherId'] = $userId;
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+
+            return response()->json(['message' => 'Teachers Only Can Update Teacher Profile'], 401);
+        }
 
         if ($this->teacherProfileInterface->isDuplicate($data, $id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Teacher profile already exists for the given combination.',
+                'message' => 'Teacher Academic Details already exists',
             ], 409);
         }
 
@@ -143,6 +135,18 @@ class ComTeacherProfileController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+
+            return response()->json(['message' => 'Teachers Only Can Delete Teacher Profile'], 401);
+        }
         try {
             $this->teacherProfileInterface->findById($id);
         } catch (ModelNotFoundException $exception) {

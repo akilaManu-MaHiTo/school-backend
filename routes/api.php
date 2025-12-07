@@ -256,6 +256,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('subject', [ComSubjectsController::class,'index']);
     Route::post('subject/{subjectId}', [ComSubjectsController::class,'update']);
     Route::delete('subject/{subjectId}', [ComSubjectsController::class,'destroy'] );
+    Route::get('all-subjects', [ComSubjectsController::class,'getSubjects']);
 
     // Classes (ComClassMng)
     Route::post('class', [ComClassMngController::class,'store']);

@@ -22,10 +22,10 @@ return new class extends Migration
             $table->string('academicYear')->required();
             $table->string('academicMedium')->required();
 
-            $table->foreign('teacherId')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('academicGradeId')->references('id')->on('com_grades')->onDelete('cascade');
-            $table->foreign('academicSubjectId')->references('id')->on('com_subjects')->onDelete('cascade');
-            $table->foreign('academicClassId')->references('id')->on('com_class_mngs')->onDelete('cascade');
+            $table->foreign('teacherId')->references('id')->on('users')->onDelete('restrict');
+            $table->foreign('academicGradeId')->references('id')->on('com_grades')->onDelete('restrict');
+            $table->foreign('academicSubjectId')->references('id')->on('com_subjects')->onDelete('restrict');
+            $table->foreign('academicClassId')->references('id')->on('com_class_mngs')->onDelete('restrict');
 
             $table->timestamps();
         });

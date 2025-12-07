@@ -60,7 +60,6 @@ class UserController extends Controller
 
         $permission = $this->comPermissionInterface->getById($user->userType);
         $userData = $user->toArray();
-
         $profileImages = is_array($user->profileImage) ? $user->profileImage : json_decode($user->profileImage, true) ?? [];
 
         $signedImages = [];
@@ -71,7 +70,6 @@ class UserController extends Controller
                 'imageUrl' => $signed['signedUrl'] ?? null,
             ];
         }
-
         foreach ($profileImages as &$uri) {
             if (isset($document['gsutil_uri'])) {
                 $imageData = $this->profileImageService->getImageUrl($document['gsutil_uri']);
@@ -79,7 +77,6 @@ class UserController extends Controller
                 $document['fileName'] = $imageData['fileName'];
             }
         }
-
         $userData['profileImage'] = $signedImages;
 
         if ($permission) {
@@ -95,12 +92,12 @@ class UserController extends Controller
                 'description' => $permission->description ?? null,
             ];
         }
+
         $teacherProfiles = $this->comTeacherProfileInterface->getByColumn(
             ['teacherId' => $user->id],
             ['*'],
             ['grade', 'subject', 'class']
         );
-
         $userData['userProfile'] = $teacherProfiles
             ? $teacherProfiles->map(function ($profile) {
                 return [
@@ -125,13 +122,8 @@ class UserController extends Controller
                 ];
             })->values()->toArray()
             : [];
-
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
-
         $userData['assigneeLevelObject'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
-
-
-
         return response()->json($userData, 200);
     }
 
@@ -249,11 +241,14 @@ class UserController extends Controller
             }
         }
 
+        $existingImages = array_values($existingImages);
+
+        $newImages = [];
         if ($request->hasFile('profileImage')) {
             foreach ($request->file('profileImage') as $file) {
                 $uploadResult = $this->profileImageService->uploadImageToGCS($file);
                 if ($uploadResult && isset($uploadResult['gsutil_uri'])) {
-                    $existingImages[] = $uploadResult['gsutil_uri'];
+                    $newImages[] = $uploadResult['gsutil_uri'];
                 }
             }
         }
@@ -261,7 +256,12 @@ class UserController extends Controller
         $user->name = $request->input('name', $user->name);
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
-        $user->profileImage = $existingImages;
+        $user->email = $request->input('email', $user->email);
+        $user->birthDate = $request->input('birthDate', $user->birthDate);
+        $user->address = $request->input('address', $user->address);
+        $user->profileImage = ! empty($newImages)
+            ? array_values($newImages)
+            : array_values($existingImages);
 
         $user->save();
 

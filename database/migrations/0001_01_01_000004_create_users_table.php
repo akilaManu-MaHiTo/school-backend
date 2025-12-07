@@ -28,6 +28,8 @@ return new class extends Migration
             $table->json('profileImage')->nullable();
             $table->boolean('availability')->default(true);
             $table->enum('gender', ['Male', 'Female'])->nullable();
+            $table->string('birthDate')->nullable();
+            $table->string('address')->nullable();
             $table->timestamps();
         });
 
