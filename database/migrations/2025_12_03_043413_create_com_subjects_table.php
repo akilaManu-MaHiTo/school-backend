@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('com_subjects', function (Blueprint $table) {
             $table->id();
             $table->string('subjectCode')->nullable();
-            $table->string('subjectName')->unique();
+            $table->string('subjectMedium')->required();
+            $table->string('subjectName')->required();
             $table->boolean('isBasketSubject');
             $table->timestamps();
         });
