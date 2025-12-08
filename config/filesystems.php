@@ -64,6 +64,12 @@ return [
             'bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
             'path_prefix' => env('GOOGLE_CLOUD_STORAGE_PATH_PREFIX', null),
             'storage_api_uri' => env('GOOGLE_CLOUD_STORAGE_API_URI', null),
+            'cors' => [
+                'methods' => array_filter(array_map('trim', explode(',', env('GCS_CORS_METHODS', 'GET')))),
+                'origins' => array_filter(array_map('trim', explode(',', env('GCS_CORS_ORIGINS', 'https://eclass2.skytechsl.com')))),
+                'response_headers' => array_filter(array_map('trim', explode(',', env('GCS_CORS_RESPONSE_HEADERS', 'Content-Type')))),
+                'max_age_seconds' => (int) env('GCS_CORS_MAX_AGE_SECONDS', 3600),
+            ],
         ],
 
     ],

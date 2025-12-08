@@ -104,6 +104,37 @@ class ProfileImageService
         }
     }
 
+    /**
+     * Update the CORS configuration for a bucket.
+     */
+    public function updateCorsConfiguration(
+        ?string $bucketName = null,
+        ?array $methods = null,
+        ?array $origins = null,
+        ?array $responseHeaders = null,
+        ?int $maxAgeSeconds = null
+    ): void {
+        $bucketName = $bucketName ?: $this->bucket;
+        $corsConfig = config('filesystems.disks.gcs.cors', []);
+
+        $methods = $methods ?? ($corsConfig['methods'] ?? ['GET']);
+        $origins = $origins ?? ($corsConfig['origins'] ?? []);
+        $responseHeaders = $responseHeaders ?? ($corsConfig['response_headers'] ?? ['Content-Type']);
+        $maxAgeSeconds = $maxAgeSeconds ?? ($corsConfig['max_age_seconds'] ?? 3600);
+
+        $client = $this->getStorageClient();
+        $bucket = $client->bucket($bucketName);
+
+        $bucket->update([
+            'cors' => [[
+                'method' => array_values($methods),
+                'origin' => array_values($origins),
+                'responseHeader' => array_values($responseHeaders),
+                'maxAgeSeconds' => $maxAgeSeconds,
+            ]],
+        ]);
+    }
+
     protected function getStorageClient(): StorageClient
     {
         $config = [];
