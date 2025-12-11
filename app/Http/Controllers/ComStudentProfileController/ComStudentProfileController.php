@@ -5,6 +5,8 @@ namespace App\Http\Controllers\ComStudentProfileController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ComStudentProfile\ComStudentProfileRequest;
 use App\Models\ComStudentProfile;
+use App\Models\ComSubjects;
+use App\Models\StudentMarks;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -49,7 +51,7 @@ class ComStudentProfileController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Student academic profile already exists.',
+                'message' => 'Student Assigned ALready to this Class',
             ], 409);
         }
 
@@ -95,7 +97,7 @@ class ComStudentProfileController extends Controller
     public function update(ComStudentProfileRequest $request, int $id): JsonResponse
     {
         try {
-            $this->studentProfileInterface->findById($id);
+            $profile = $this->studentProfileInterface->findById($id);
         } catch (ModelNotFoundException $exception) {
             return response()->json([
                 'success' => false,
@@ -105,10 +107,14 @@ class ComStudentProfileController extends Controller
 
         $data = $request->validated();
 
+        if (! array_key_exists('studentId', $data)) {
+            $data['studentId'] = $profile->studentId;
+        }
+
         if ($this->studentProfileInterface->isDuplicate($data, $id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student academic profile already exists.',
+                'message' => 'Student Assigned ALready to this Class',
             ], 409);
         }
 
@@ -165,5 +171,90 @@ class ComStudentProfileController extends Controller
             'createdAt'      => $profile->created_at,
             'updatedAt'      => $profile->updated_at,
         ];
+    }
+
+    public function getStudentMarks(
+        int $gradeId,
+        int $classId,
+        string $year,
+        string $medium,
+        int $subjectId,
+        string $term,
+
+    ): JsonResponse {
+        $subject = ComSubjects::find($subjectId);
+
+        if (! $subject) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subject not found.',
+            ], 404);
+        }
+
+        $profiles = ComStudentProfile::query()
+            ->with(['student', 'grade', 'class'])
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicMedium', $medium)
+            ->where('academicYear', $year)
+            ->get();
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No student profiles found for the provided criteria.',
+                'data'    => [],
+                'subject' => [
+                    'id'          => $subject->id,
+                    'subjectCode' => $subject->subjectCode,
+                    'subjectName' => $subject->subjectName,
+                ],
+            ]);
+        }
+
+        $marks = StudentMarks::query()
+            ->whereIn('studentProfileId', $profiles->pluck('id'))
+            ->where('academicSubjectId', $subjectId)
+            ->where('academicTerm', $term)
+            ->where('academicYear', $year)
+            ->get()
+            ->keyBy('studentProfileId');
+
+        $payload = $profiles->map(function (ComStudentProfile $profile) use ($marks, $subject, $term) {
+            $mark = $marks->get($profile->id);
+
+            return [
+                'studentProfileId'  => $profile->id,
+                'student'           => $profile->student ? [
+                    'id'    => $profile->student->id,
+                    'userName'=> $profile->student->userName,
+                    'name'  => $profile->student->name,
+                    'email' => $profile->student->email,
+                ] : null,
+                'grade'             => $profile->grade ? [
+                    'id'    => $profile->grade->id,
+                    'grade' => $profile->grade->grade,
+                ] : null,
+                'class'             => $profile->class ? [
+                    'id'        => $profile->class->id,
+                    'className' => $profile->class->className,
+                ] : null,
+
+                'academicYear'      => $profile->academicYear,
+                'academicMedium'    => $profile->academicMedium,
+                'subject'           => [
+                    'id'          => $subject->id,
+                    'subjectCode' => $subject->subjectCode,
+                    'subjectName' => $subject->subjectName,
+                ],
+                'academicTerm'      => $term,
+                'studentMark'       => $mark?->studentMark,
+                'markGrade'         => $mark?->markGrade,
+            ];
+        })->values();
+
+        return response()->json(
+            $payload,
+        );
     }
 }
