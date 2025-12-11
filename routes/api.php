@@ -17,6 +17,7 @@ use App\Http\Controllers\CommonControllers\ResponsibleSectionController;
 use App\Http\Controllers\CommonControllers\UserTypeController;
 use App\Http\Controllers\SubjectControllers\ComSubjectsController;
 use App\Http\Controllers\ClassMngControllers\ComClassMngController;
+use App\Http\Controllers\ComStudentProfileController\ComStudentProfileController;
 use App\Http\Controllers\ComTeacherProfile\ComTeacherProfileController;
 use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
@@ -271,4 +272,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-profiles/{id}', [ComTeacherProfileController::class, 'show']);
     Route::post('teacher-profiles/{id}', [ComTeacherProfileController::class, 'update']);
     Route::delete('teacher-profiles/{id}', [ComTeacherProfileController::class, 'destroy']);
+
+    // Student profiles
+    Route::get('student-profiles', [ComStudentProfileController::class, 'index']);
+    Route::post('student-profiles', [ComStudentProfileController::class, 'store']);
+    Route::get('student-profiles/{id}', [ComStudentProfileController::class, 'show']);
+    Route::post('student-profiles/{id}', [ComStudentProfileController::class, 'update']);
+    Route::delete('student-profiles/{id}', [ComStudentProfileController::class, 'destroy']);
 });

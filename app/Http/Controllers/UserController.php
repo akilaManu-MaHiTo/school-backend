@@ -7,6 +7,7 @@ use App\Notifications\EmailChangeOTPsend\SendOtpEmailChange;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
 use App\Repositories\All\ComPermission\ComPermissionInterface;
+use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
 use App\Repositories\All\ComTeacherProfile\ComTeacherProfileInterface;
 use App\Repositories\All\User\UserInterface;
 use App\Services\OrganizationService;
@@ -32,6 +33,8 @@ class UserController extends Controller
 
     protected $comOrganizationInterface;
 
+    protected $comStudentProfileInterface;
+
     public function __construct(
         UserInterface $userInterface,
         ComPermissionInterface $comPermissionInterface,
@@ -39,7 +42,9 @@ class UserController extends Controller
         AssigneeLevelInterface $assigneeLevelInterface,
         ProfileImageService $profileImageService,
         ComOrganizationInterface $comOrganizationInterface,
-        OrganizationService $organizationService
+        OrganizationService $organizationService,
+        ComStudentProfileInterface $comStudentProfileInterface,
+
     ) {
         $this->userInterface = $userInterface;
         $this->comPermissionInterface = $comPermissionInterface;
@@ -48,6 +53,7 @@ class UserController extends Controller
         $this->profileImageService = $profileImageService;
         $this->organizationService = $organizationService;
         $this->comOrganizationInterface = $comOrganizationInterface;
+        $this->comStudentProfileInterface = $comStudentProfileInterface;
     }
 
     public function show(Request $request)
@@ -112,6 +118,31 @@ class UserController extends Controller
                         'id' => $profile->subject->id,
                         'subjectCode' => $profile->subject->subjectCode,
                         'subjectName' => $profile->subject->subjectName,
+                    ] : null,
+                    'class' => $profile->class ? [
+                        'id' => $profile->class->id,
+                        'className' => $profile->class->className,
+                    ] : null,
+                    'createdAt' => $profile->created_at,
+                    'updatedAt' => $profile->updated_at,
+                ];
+            })->values()->toArray()
+            : [];
+        $studentProfile = $this->comStudentProfileInterface->getByColumn(
+            ['studentId' => $user->id],
+            ['*'],
+            ['grade', 'class']
+        );
+        $userData['studentProfile'] = $studentProfile
+            ? $studentProfile->map(function ($profile) {
+                return [
+                    'id' => $profile->id,
+                    'isStudentApproved' => $profile->isStudentApproved,
+                    'academicYear' => $profile->academicYear,
+                    'academicMedium' => $profile->academicMedium,
+                    'grade' => $profile->grade ? [
+                        'id' => $profile->grade->id,
+                        'grade' => $profile->grade->grade,
                     ] : null,
                     'class' => $profile->class ? [
                         'id' => $profile->class->id,
