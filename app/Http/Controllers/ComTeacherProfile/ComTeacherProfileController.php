@@ -194,4 +194,170 @@ class ComTeacherProfileController extends Controller
             'updatedAt'      => $profile->updated_at,
         ];
     }
+
+    public function getTeacherYears(): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+            return response()->json(['message' => 'Teachers Only Can View Teacher Years'], 401);
+        }
+
+        $years = $this->teacherProfileInterface->getTeacherYears($user->id);
+
+        return response()->json(
+            $years,
+            200
+        );
+    }
+
+    public function getTeacherClasses(string $year, string $gradeId): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (! $year || ! $gradeId) {
+            return response()->json(['message' => 'Academic year and grade are required'], 400);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+            return response()->json(['message' => 'Teachers Only Can View Classes'], 401);
+        }
+
+        $classes = $this->teacherProfileInterface
+            ->getTeacherClassesForYear($user->id, $year, $gradeId)
+            ->map(function ($profile) {
+                if (! $profile->class) {
+                    return null;
+                }
+
+                return [
+                    'id'        => $profile->class->id,
+                    'className' => $profile->class->className,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($classes, 200);
+    }
+
+    public function getTeacherGrades(string $year): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (! $year) {
+            return response()->json(['message' => 'Academic year is required'], 400);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+            return response()->json(['message' => 'Teachers Only Can View Grades'], 401);
+        }
+
+        $grades = $this->teacherProfileInterface
+            ->getTeacherGradesForYear($user->id, $year)
+            ->map(function ($profile) {
+                if (! $profile->grade) {
+                    return null;
+                }
+
+                return [
+                    'id'    => $profile->grade->id,
+                    'grade' => $profile->grade->grade,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($grades, 200);
+    }
+
+    public function getTeacherMediums(string $year): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (! $year) {
+            return response()->json(['message' => 'Academic year is required'], 400);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+            return response()->json(['message' => 'Teachers Only Can View Mediums'], 401);
+        }
+
+        $mediums = $this->teacherProfileInterface
+            ->getTeacherMediumsForYear($user->id, $year)
+            ->map(fn($profile) => $profile->academicMedium)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json($mediums, 200);
+    }
+
+    public function getTeacherSubject(
+        string $year,
+        string $gradeId,
+        string $classId,
+        string $medium
+    ): JsonResponse {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (! $year || ! $gradeId || ! $classId || ! $medium) {
+            return response()->json(['message' => 'Year, grade, class, and medium are required'], 400);
+        }
+
+        $userType = $user->employeeType;
+
+        if ($userType === 'Student' || $userType === 'Parent' || $userType === null) {
+            return response()->json(['message' => 'Teachers Only Can View Subjects'], 401);
+        }
+
+        $subjects = $this->teacherProfileInterface
+            ->getTeacherSubjects($user->id, $year, $gradeId, $classId, $medium)
+            ->map(function ($profile) {
+                if (! $profile->subject) {
+                    return null;
+                }
+
+                return [
+                    'id'          => $profile->subject->id,
+                    'subjectCode' => $profile->subject->subjectCode,
+                    'subjectName' => $profile->subject->subjectName,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($subjects, 200);
+    }
 }

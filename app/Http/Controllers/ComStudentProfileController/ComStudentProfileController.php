@@ -200,16 +200,7 @@ class ComStudentProfileController extends Controller
             ->get();
 
         if ($profiles->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No student profiles found for the provided criteria.',
-                'data'    => [],
-                'subject' => [
-                    'id'          => $subject->id,
-                    'subjectCode' => $subject->subjectCode,
-                    'subjectName' => $subject->subjectName,
-                ],
-            ]);
+            return response()->json([]);
         }
 
         $marks = StudentMarks::query()
@@ -227,7 +218,8 @@ class ComStudentProfileController extends Controller
                 'studentProfileId'  => $profile->id,
                 'student'           => $profile->student ? [
                     'id'    => $profile->student->id,
-                    'userName'=> $profile->student->userName,
+                    'employeeNumber' => $profile->student->employeeNumber,
+                    'userName' => $profile->student->userName,
                     'name'  => $profile->student->name,
                     'email' => $profile->student->email,
                 ] : null,
@@ -250,6 +242,7 @@ class ComStudentProfileController extends Controller
                 'academicTerm'      => $term,
                 'studentMark'       => $mark?->studentMark,
                 'markGrade'         => $mark?->markGrade,
+                'markId'            => $mark?->id
             ];
         })->values();
 
