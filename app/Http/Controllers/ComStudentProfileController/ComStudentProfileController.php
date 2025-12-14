@@ -242,7 +242,8 @@ class ComStudentProfileController extends Controller
                 'academicTerm'      => $term,
                 'studentMark'       => $mark?->studentMark,
                 'markGrade'         => $mark?->markGrade,
-                'markId'            => $mark?->id
+                'markId'            => $mark?->id,
+                'isAbsentStudent'   => $mark?->isAbsentStudent
             ];
         })->values();
 

@@ -29,6 +29,11 @@ class StudentMarksController extends Controller
     {
         $payload = $request->validated();
 
+        if (($payload['isAbsentStudent'] ?? false) === true) {
+            $payload['studentMark'] = null;
+            $payload['markGrade'] = null;
+        }
+
         try {
             $mark = $this->studentMarksInterface->create($payload);
         } catch (\Throwable $throwable) {
@@ -80,6 +85,11 @@ class StudentMarksController extends Controller
 
         $payload = $request->validated();
 
+        if (($payload['isAbsentStudent'] ?? false) === true) {
+            $payload['studentMark'] = null;
+            $payload['markGrade'] = null;
+        }
+
         $this->studentMarksInterface->update($id, $payload);
 
         $mark = $this->studentMarksInterface->findById($id, ['*'], ['studentProfile.student', 'subject']);
@@ -122,6 +132,7 @@ class StudentMarksController extends Controller
             'markGrade'         => $mark->markGrade,
             'academicYear'      => $mark->academicYear,
             'academicTerm'      => $mark->academicTerm,
+            'isAbsentStudent'   => $mark->isAbsentStudent,
             'studentProfile'    => $mark->studentProfile ? [
                 'id'             => $mark->studentProfile->id,
                 'academicYear'   => $mark->studentProfile->academicYear,

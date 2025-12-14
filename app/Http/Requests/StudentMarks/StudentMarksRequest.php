@@ -20,6 +20,7 @@ class StudentMarksRequest extends FormRequest
             'markGrade'         => ['nullable', 'string', 'max:255'],
             'academicYear'      => ['nullable', 'string', 'max:255'],
             'academicTerm'      => ['nullable', 'string', 'max:255'],
+            'isAbsentStudent'   => ['required', 'boolean'],
         ];
     }
 }

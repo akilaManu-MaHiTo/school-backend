@@ -21,6 +21,7 @@ class StudentMarks extends Model
         'markGrade',
         'academicYear',
         'academicTerm',
+        'isAbsentStudent',
     ];
 
     protected $casts = [
@@ -30,6 +31,7 @@ class StudentMarks extends Model
         'markGrade'          => 'string',
         'academicYear'       => 'string',
         'academicTerm'       => 'string',
+        'isAbsentStudent'    => 'boolean',
     ];
 
     public function studentProfile(): BelongsTo

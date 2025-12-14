@@ -19,8 +19,9 @@ return new class extends Migration
 
             $table->string('studentMark')->nullable();
             $table->string('markGrade')->nullable();
-            $table->string('academicYear')->nullable();
-            $table->string('academicTerm')->nullable();
+            $table->string('academicYear')->required();
+            $table->string('academicTerm')->required();
+            $table->boolean('isAbsentStudent')->required();
 
             $table->foreign('studentProfileId')->references('id')->on('com_student_profiles')->onDelete('restrict');
             $table->foreign('academicSubjectId')->references('id')->on('com_subjects')->onDelete('restrict');
