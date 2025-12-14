@@ -17,6 +17,7 @@ use App\Http\Controllers\CommonControllers\ResponsibleSectionController;
 use App\Http\Controllers\CommonControllers\UserTypeController;
 use App\Http\Controllers\SubjectControllers\ComSubjectsController;
 use App\Http\Controllers\ClassMngControllers\ComClassMngController;
+use App\Http\Controllers\ComStudentProfileController\ComStudentProfileController;
 use App\Http\Controllers\ComTeacherProfile\ComTeacherProfileController;
 use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
@@ -102,6 +103,7 @@ use App\Http\Controllers\SustainabilityAppsControllers\SaSrPillarsController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGController;
 
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGReportingRecodeController;
+use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -133,7 +135,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users', [AdminController::class, 'index']);
     Route::post('users/{id}/update', [AdminController::class, 'update']);
     Route::get('users-assignee-level', [AdminController::class, 'assigneeLevel']);
-
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -166,7 +167,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('chemical-dashboard/{Year}/all-summary', [SaCmPurchaseInventoryRecodeController::class, 'getAllSummary']);
     Route::get('chemical-dashboard/{startDate}/{endDate}/{division}/category-and-classification', [SaCmPurchaseInventoryRecodeController::class, 'getCategoryAndClassification']);
     Route::get('chemical-dashboard/{startDate}/{endDate}/{division}/do-you-have-msds', [SaCmPurchaseInventoryRecodeController::class, 'getDoYouHaveMsdsPercentage']);
-
 });
 
 Route::get('user-permissions', [ComPermissionController::class, 'index']);
@@ -244,26 +244,26 @@ Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
-    Route::post('grade/{gradeId}', [ComGradesController::class,'update'] );
-    Route::delete('grade/{gradeId}', [ComGradesController::class,'destroy'] );
+    Route::post('grade/{gradeId}', [ComGradesController::class, 'update']);
+    Route::delete('grade/{gradeId}', [ComGradesController::class, 'destroy']);
 
-    Route::post('year', [ComAcademicYearsController::class,'store']);
-    Route::get('year', [ComAcademicYearsController::class,'index']);
-    Route::post('year/{yearId}', [ComAcademicYearsController::class,'update']);
-    Route::delete('year/{yearId}', [ComAcademicYearsController::class,'destroy']);
+    Route::post('year', [ComAcademicYearsController::class, 'store']);
+    Route::get('year', [ComAcademicYearsController::class, 'index']);
+    Route::post('year/{yearId}', [ComAcademicYearsController::class, 'update']);
+    Route::delete('year/{yearId}', [ComAcademicYearsController::class, 'destroy']);
 
-    Route::post('subject', [ComSubjectsController::class,'store']);
-    Route::get('subject', [ComSubjectsController::class,'index']);
-    Route::post('subject/{subjectId}', [ComSubjectsController::class,'update']);
-    Route::delete('subject/{subjectId}', [ComSubjectsController::class,'destroy'] );
-    Route::get('all-subjects', [ComSubjectsController::class,'getSubjects']);
+    Route::post('subject', [ComSubjectsController::class, 'store']);
+    Route::get('subject', [ComSubjectsController::class, 'index']);
+    Route::post('subject/{subjectId}', [ComSubjectsController::class, 'update']);
+    Route::delete('subject/{subjectId}', [ComSubjectsController::class, 'destroy']);
+    Route::get('all-subjects', [ComSubjectsController::class, 'getSubjects']);
 
     // Classes (ComClassMng)
-    Route::post('class', [ComClassMngController::class,'store']);
-    Route::get('class', [ComClassMngController::class,'index']);
-    Route::get('class/{id}', [ComClassMngController::class,'show']);
-    Route::post('class/{id}', [ComClassMngController::class,'update']);
-    Route::delete('class/{id}', [ComClassMngController::class,'destroy'] );
+    Route::post('class', [ComClassMngController::class, 'store']);
+    Route::get('class', [ComClassMngController::class, 'index']);
+    Route::get('class/{id}', [ComClassMngController::class, 'show']);
+    Route::post('class/{id}', [ComClassMngController::class, 'update']);
+    Route::delete('class/{id}', [ComClassMngController::class, 'destroy']);
 
     // Teacher profiles
     Route::get('teacher-profiles', [ComTeacherProfileController::class, 'index']);
@@ -271,4 +271,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-profiles/{id}', [ComTeacherProfileController::class, 'show']);
     Route::post('teacher-profiles/{id}', [ComTeacherProfileController::class, 'update']);
     Route::delete('teacher-profiles/{id}', [ComTeacherProfileController::class, 'destroy']);
+    Route::get('teacher-years', [ComTeacherProfileController::class, 'getTeacherYears']);
+    Route::get('teacher-mediums/{year}', [ComTeacherProfileController::class, 'getTeacherMediums']);
+    Route::get('teacher-grades/{year}', [ComTeacherProfileController::class, 'getTeacherGrades']);
+    Route::get('teacher-class/{year}/{grade}', [ComTeacherProfileController::class, 'getTeacherClasses']);
+    Route::get('teacher-subject/{year}/{grade}/{class}/{medium}/subject', [ComTeacherProfileController::class, 'getTeacherSubject']);
+
+
+
+    // Student profiles
+    Route::get('student-profiles', [ComStudentProfileController::class, 'index']);
+    Route::post('student-profiles', [ComStudentProfileController::class, 'store']);
+    Route::get('student-profiles/{id}', [ComStudentProfileController::class, 'show']);
+    Route::post('student-profiles/{id}', [ComStudentProfileController::class, 'update']);
+    Route::delete('student-profiles/{id}', [ComStudentProfileController::class, 'destroy']);
+    Route::get('student-profiles/{gradeId}/{classId}/{year}/{medium}/{subjectId}/{term}/marks', [ComStudentProfileController::class, 'getStudentMarks']);
+
+    // Student marks
+    Route::get('student-marks', [StudentMarksController::class, 'index']);
+    Route::post('student-marks', [StudentMarksController::class, 'store']);
+    Route::get('student-marks/{id}', [StudentMarksController::class, 'show']);
+    Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
+    Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
 });

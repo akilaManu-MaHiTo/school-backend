@@ -28,6 +28,8 @@ use App\Repositories\All\ComClassMng\ComClassMngInterface;
 use App\Repositories\All\ComClassMng\ComClassMngRepository;
 use App\Repositories\All\ComTeacherProfile\ComTeacherProfileInterface;
 use App\Repositories\All\ComTeacherProfile\ComTeacherProfileRepository;
+use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
+use App\Repositories\All\ComStudentProfile\ComStudentProfileRepository;
 use App\Repositories\All\ComJobPosition\JobPositionInterface;
 use App\Repositories\All\ComJobPosition\JobPositionRepository;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
@@ -234,6 +236,8 @@ use App\Repositories\All\SaSrPillars\PillarsInterface;
 use App\Repositories\All\SaSrPillars\PillarsRepository;
 use App\Repositories\All\SaSrSDG\SrSdgInterface;
 use App\Repositories\All\SaSrSDG\SrSdgRepository;
+use App\Repositories\All\StudentMarks\StudentMarksInterface;
+use App\Repositories\All\StudentMarks\StudentMarksRepository;
 use App\Repositories\All\User\UserInterface;
 use App\Repositories\All\User\UserRepository;
 use Illuminate\Support\Facades\Vite;
@@ -293,6 +297,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ComAcademicYearInterface::class, ComAcademicYearRepository::class);
         $this->app->bind(ComSubjectsInterface::class, ComSubjectsRepository::class);
         $this->app->bind(ComTeacherProfileInterface::class, ComTeacherProfileRepository::class);
+        $this->app->bind(ComStudentProfileInterface::class, ComStudentProfileRepository::class);
+        $this->app->bind(StudentMarksInterface::class, StudentMarksRepository::class);
 
     }
 }
