@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('academicYear')->required();
             $table->string('academicMedium')->required();
 
+            $table->json('basketSubjectsIds')->nullable();
+
             $table->foreign('studentId')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('academicGradeId')->references('id')->on('com_grades')->onDelete('restrict');
             $table->foreign('academicClassId')->references('id')->on('com_class_mngs')->onDelete('restrict');

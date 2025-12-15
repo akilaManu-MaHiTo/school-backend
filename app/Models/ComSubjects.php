@@ -15,6 +15,7 @@ class ComSubjects extends Model
         'subjectCode',
         'subjectName',
         'subjectMedium',
-        'isBasketSubject'
+        'isBasketSubject',
+        'basketGroup'
     ];
 }

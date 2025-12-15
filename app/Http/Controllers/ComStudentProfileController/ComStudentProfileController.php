@@ -28,50 +28,49 @@ class ComStudentProfileController extends Controller
 
     public function store(ComStudentProfileRequest $request): JsonResponse
     {
-        Log::info('ComStudentProfileController.store invoked', [
-            'payload' => $request->all(),
-        ]);
-
         $user = Auth::user();
         if (! $user) {
-            Log::warning('ComStudentProfileController.store unauthorized access attempt');
             return response()->json(['message' => 'Unauthorized'], 401);
         }
         $userId = $user->id;
-        Log::info('ComStudentProfileController.store authenticated user', ['userId' => $userId]);
-
         $data = $request->validated();
-        Log::info('ComStudentProfileController.store validation passed');
         $data['studentId'] = $userId;
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
 
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
+        }
         if ($this->studentProfileInterface->isDuplicate($data)) {
-            Log::warning('ComStudentProfileController.store duplicate detected', [
-                'studentId' => $userId,
-                'attributes' => $data,
-            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Student Assigned ALready to this Class',
             ], 409);
         }
-
         try {
             $profile = $this->studentProfileInterface->create($data);
         } catch (\Throwable $throwable) {
-            Log::error('ComStudentProfileController.store failed', [
-                'payload' => $data,
-                'error'   => $throwable->getMessage(),
-            ]);
+
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create student profile.',
             ], 500);
         }
-
-        Log::info('ComStudentProfileController.store completed successfully', [
-            'studentProfileId' => $profile->id,
-        ]);
 
         return response()->json([
             'success' => true,
@@ -109,6 +108,26 @@ class ComStudentProfileController extends Controller
 
         if (! array_key_exists('studentId', $data)) {
             $data['studentId'] = $profile->studentId;
+        }
+
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
+
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
         }
 
         if ($this->studentProfileInterface->isDuplicate($data, $id)) {

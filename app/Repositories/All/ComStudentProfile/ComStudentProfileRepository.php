@@ -14,7 +14,7 @@ class ComStudentProfileRepository extends BaseRepository implements ComStudentPr
 
     public function isDuplicate(array $attributes, ?int $ignoreId = null): bool
     {
-        foreach (['studentId', 'academicYear','academicGradeId'] as $key) {
+        foreach (['studentId', 'academicYear', 'academicGradeId'] as $key) {
             if (! array_key_exists($key, $attributes)) {
                 return false;
             }
@@ -23,6 +23,8 @@ class ComStudentProfileRepository extends BaseRepository implements ComStudentPr
         $query = $this->model->newQuery()
             ->where('studentId', $attributes['studentId'])
             ->where('academicGradeId', $attributes['academicGradeId'])
+            ->where('academicClassId', $attributes['academicClassId'])
+            ->where('academicMedium', $attributes['academicMedium'])
             ->where('academicYear', $attributes['academicYear']);
 
         if ($ignoreId) {

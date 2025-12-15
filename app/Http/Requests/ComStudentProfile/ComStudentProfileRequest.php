@@ -22,6 +22,7 @@ class ComStudentProfileRequest extends FormRequest
             'academicClassId' => ['required', 'integer', 'exists:com_class_mngs,id'],
             'academicYear'    => ['required', 'string', 'max:255'],
             'academicMedium'  => ['required', 'string', 'max:255'],
+            'basketSubjectsIds' => ['nullable', 'array'],
         ];
     }
 }
