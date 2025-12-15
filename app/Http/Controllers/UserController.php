@@ -10,6 +10,7 @@ use App\Repositories\All\ComPermission\ComPermissionInterface;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
 use App\Repositories\All\ComTeacherProfile\ComTeacherProfileInterface;
 use App\Repositories\All\User\UserInterface;
+use App\Traits\HandlesBasketSubjects;
 use App\Services\OrganizationService;
 use App\Services\ProfileImageService;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    use HandlesBasketSubjects;
     protected $userInterface;
 
     protected $comPermissionInterface;
@@ -133,8 +135,20 @@ class UserController extends Controller
             ['*'],
             ['grade', 'class']
         );
-        $userData['studentProfile'] = $studentProfile
-            ? $studentProfile->map(function ($profile) {
+
+        $studentProfilesCollection = $studentProfile ? $studentProfile : collect();
+        $basketSubjectsLookup = $this->fetchBasketSubjects(
+            $studentProfilesCollection
+                ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                ->unique()
+                ->values()
+                ->all()
+        );
+
+        $userData['studentProfile'] = $studentProfilesCollection
+            ->map(function ($profile) use ($basketSubjectsLookup) {
+                $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
                 return [
                     'id' => $profile->id,
                     'isStudentApproved' => $profile->isStudentApproved,
@@ -148,11 +162,14 @@ class UserController extends Controller
                         'id' => $profile->class->id,
                         'className' => $profile->class->className,
                     ] : null,
+                    'basketSubjectsIds' => $basketSubjectIds,
+                    'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
                     'createdAt' => $profile->created_at,
                     'updatedAt' => $profile->updated_at,
                 ];
-            })->values()->toArray()
-            : [];
+            })
+            ->values()
+            ->toArray();
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         $userData['assigneeLevelObject'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         return response()->json($userData, 200);
