@@ -22,6 +22,8 @@ class ComStudentProfileRepository extends BaseRepository implements ComStudentPr
 
         $query = $this->model->newQuery()
             ->where('studentId', $attributes['studentId'])
+            ->where('academicYear', $attributes['academicYear'])
+            ->where('academicClassId', $attributes['academicClassId'])
             ->where('academicGradeId', $attributes['academicGradeId'])
             ->where('academicYear', $attributes['academicYear']);
 
