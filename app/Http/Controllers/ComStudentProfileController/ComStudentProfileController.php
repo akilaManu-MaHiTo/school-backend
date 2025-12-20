@@ -8,70 +8,81 @@ use App\Models\ComStudentProfile;
 use App\Models\ComSubjects;
 use App\Models\StudentMarks;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
+use App\Traits\HandlesBasketSubjects;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class ComStudentProfileController extends Controller
 {
+    use HandlesBasketSubjects;
     public function __construct(private readonly ComStudentProfileInterface $studentProfileInterface) {}
 
     public function index(): JsonResponse
     {
         $profiles = $this->studentProfileInterface
-            ->all(['*'], ['student', 'grade', 'class'], 'created_at', 'desc')
-            ->map(fn($profile) => $this->formatProfile($profile));
+            ->all(['*'], ['student', 'grade', 'class'], 'created_at', 'desc');
 
-        return response()->json($profiles, 200);
+        $basketSubjectsLookup = $this->fetchBasketSubjects(
+            $profiles
+                ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                ->unique()
+                ->values()
+                ->all()
+        );
+
+        $payload = $profiles->map(fn($profile) => $this->formatProfile($profile, $basketSubjectsLookup));
+
+        return response()->json($payload, 200);
     }
 
     public function store(ComStudentProfileRequest $request): JsonResponse
     {
-        Log::info('ComStudentProfileController.store invoked', [
-            'payload' => $request->all(),
-        ]);
-
         $user = Auth::user();
         if (! $user) {
-            Log::warning('ComStudentProfileController.store unauthorized access attempt');
             return response()->json(['message' => 'Unauthorized'], 401);
         }
         $userId = $user->id;
-        Log::info('ComStudentProfileController.store authenticated user', ['userId' => $userId]);
-
         $data = $request->validated();
-        Log::info('ComStudentProfileController.store validation passed');
         $data['studentId'] = $userId;
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
 
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
+        }
         if ($this->studentProfileInterface->isDuplicate($data)) {
-            Log::warning('ComStudentProfileController.store duplicate detected', [
-                'studentId' => $userId,
-                'attributes' => $data,
-            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Student Assigned ALready to this Class',
             ], 409);
         }
-
         try {
             $profile = $this->studentProfileInterface->create($data);
         } catch (\Throwable $throwable) {
-            Log::error('ComStudentProfileController.store failed', [
-                'payload' => $data,
-                'error'   => $throwable->getMessage(),
-            ]);
+
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create student profile.',
             ], 500);
         }
-
-        Log::info('ComStudentProfileController.store completed successfully', [
-            'studentProfileId' => $profile->id,
-        ]);
 
         return response()->json([
             'success' => true,
@@ -111,6 +122,26 @@ class ComStudentProfileController extends Controller
             $data['studentId'] = $profile->studentId;
         }
 
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
+
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
+        }
+
         if ($this->studentProfileInterface->isDuplicate($data, $id)) {
             return response()->json([
                 'success' => false,
@@ -147,9 +178,11 @@ class ComStudentProfileController extends Controller
         ], $deleted ? 200 : 500);
     }
 
-    private function formatProfile(ComStudentProfile $profile): array
+    private function formatProfile(ComStudentProfile $profile, ?Collection $subjectLookup = null): array
     {
         $profile->loadMissing(['student', 'grade', 'class']);
+        $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+        $lookup = $subjectLookup ?? $this->fetchBasketSubjects($basketSubjectIds);
 
         return [
             'id'             => $profile->id,
@@ -168,6 +201,8 @@ class ComStudentProfileController extends Controller
             ] : null,
             'academicYear'   => $profile->academicYear,
             'academicMedium' => $profile->academicMedium,
+            'basketSubjectsIds' => $basketSubjectIds,
+            'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $lookup),
             'createdAt'      => $profile->created_at,
             'updatedAt'      => $profile->updated_at,
         ];
@@ -203,15 +238,26 @@ class ComStudentProfileController extends Controller
             return response()->json([]);
         }
 
+        // Filter students to the basket if the subject is elective; otherwise fall back to the full class list
+        $basketSubjectProfiles = $profiles->filter(function (ComStudentProfile $profile) use ($subjectId) {
+            $basketSubjectArray = array_map('intval', $profile->basketSubjectsIds ?? []);
+
+            return in_array($subjectId, $basketSubjectArray, true);
+        });
+
+        $profilesForSubject = $basketSubjectProfiles->isNotEmpty()
+            ? $basketSubjectProfiles
+            : $profiles;
+
         $marks = StudentMarks::query()
-            ->whereIn('studentProfileId', $profiles->pluck('id'))
+            ->whereIn('studentProfileId', $profilesForSubject->pluck('id'))
             ->where('academicSubjectId', $subjectId)
             ->where('academicTerm', $term)
             ->where('academicYear', $year)
             ->get()
             ->keyBy('studentProfileId');
 
-        $payload = $profiles->map(function (ComStudentProfile $profile) use ($marks, $subject, $term) {
+        $payload = $profilesForSubject->map(function (ComStudentProfile $profile) use ($marks, $subject, $term) {
             $mark = $marks->get($profile->id);
 
             return [

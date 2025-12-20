@@ -17,7 +17,12 @@ class ComStudentProfile extends Model
         'academicYear',
         'academicMedium',
         'isStudentApproved',
+        'basketSubjectsIds',
     ];
+    protected $casts = [
+        'basketSubjectsIds' => 'array',
+    ];
+
 
     public function student()
     {

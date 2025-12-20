@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('subjectMedium')->required();
             $table->string('subjectName')->required();
             $table->boolean('isBasketSubject');
+            $table->enum('basketGroup', ['Group 1', 'Group 2', 'Group 3'])->nullable();
             $table->timestamps();
         });
     }

@@ -76,6 +76,14 @@ class ComSubjectsController extends Controller
         $subjectName = $data['subjectName'] ?? null;
         $subjectCode = $data['subjectCode'] ?? null;
 
+        $isBasketSubject = $data['isBasketSubject'] ?? null;
+        if ($isBasketSubject && (!isset($data['basketGroup']) || $data['basketGroup'] === null)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Basket group is required when the subject is a basket subject.'
+            ], 422);
+        }
+
         if (!$subjectName || trim($subjectName) === '') {
             return response()->json([
                 'success' => false,
@@ -143,6 +151,14 @@ class ComSubjectsController extends Controller
         $newName = $data['subjectName'] ?? $subject->subjectName;
         $newSubjectMedium = $data['subjectMedium'] ?? $subject->subjectMedium;
         $newCode = $data['subjectCode'] ?? $subject->subjectCode;
+
+        $isBasketSubject = $data['isBasketSubject'] ?? null;
+        if ($isBasketSubject && (!isset($data['basketGroup']) || $data['basketGroup'] === null)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Basket group is required when the subject is a basket subject.'
+            ], 422);
+        }
 
         // Check for duplicate name + medium
         $nameExists = ComSubjects::where('subjectName', $newName)
