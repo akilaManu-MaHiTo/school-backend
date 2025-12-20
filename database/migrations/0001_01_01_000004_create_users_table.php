@@ -13,6 +13,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->nullable();
             $table->string('userName')->unique();
+            $table->string('nameWithInitials')->required();
             $table->string('email')->nullable()->unique();
             $table->string('password');
             $table->enum('employeeType', ['Student', 'Teacher', 'Parent'])->default('Student');

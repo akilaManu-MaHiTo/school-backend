@@ -305,6 +305,7 @@ class UserController extends Controller
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
         $user->email = $request->input('email', $user->email);
+        $user->nameWithInitials = $request->input('nameWithInitials', $user->nameWithInitials);
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
         $user->profileImage = ! empty($newImages)

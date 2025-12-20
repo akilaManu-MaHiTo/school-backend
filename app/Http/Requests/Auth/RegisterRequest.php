@@ -17,9 +17,10 @@ class RegisterRequest extends FormRequest
 
             'name'              => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/'],
             'userName'          => ['required', 'string', 'max:255', 'unique:users'],
+            'nameWithInitials'  => ['required', 'string', 'max:255'],
             'email'             => ['nullable', 'string', 'email', 'max:255', 'unique:users'],
             'password'          => ['required', 'min:4', 'confirmed', 'max:15'],
-            'mobile'            => ['required', 'string', 'max:15', 'unique:users'],
+            'mobile'            => ['required', 'string', 'max:15',],
             'employeeType'      => ['required', 'string', 'max:255'],
             'employeeNumber'    => ['nullable', 'string', 'max:255', 'unique:users', 'required_if:employeeType,Teacher,Student'],
         ];
@@ -40,11 +41,12 @@ class RegisterRequest extends FormRequest
             'password.min'                => 'Password must be at least 4 characters.',
 
             'mobile.required'             => 'Mobile is required.',
-            'mobile.unique'               => 'Mobile number already exists.',
 
             'employeeType'                => 'Employee Type is Required',
             'employeeNumber.required_if'  => 'Employee number is required when the user is a company employee.',
             'employeeNumber.unique'       => 'Employee number already exists.',
+
+            'nameWithInitials.required'   => 'Name with initials is required.',
         ];
     }
 }

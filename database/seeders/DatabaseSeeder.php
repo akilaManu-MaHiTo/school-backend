@@ -123,6 +123,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name'          => 'Admin User',
             'userName'     => 'admin',
+            'nameWithInitials'  => 'A.U.Admin',
             'email'         => 'admin@suswebapp.com',
             'password'      => Hash::make('Admin@1234'),
             'userType'      => '1',
@@ -132,6 +133,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name'          => 'Super Admin',
             'userName'     => 'supperadmin',
+            'nameWithInitials'  => 'S.A.Admin',
             'email'         => 'supperadmin@suswebapp.com',
             'password'      => Hash::make('Supperadmin@1234'),
             'userType'      => '1',
