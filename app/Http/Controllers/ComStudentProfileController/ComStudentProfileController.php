@@ -297,4 +297,58 @@ class ComStudentProfileController extends Controller
             $payload,
         );
     }
+
+    public function updateByAdmin(ComStudentProfileRequest $request, int $id): JsonResponse
+    {
+        try {
+            $profile = $this->studentProfileInterface->findById($id);
+        } catch (ModelNotFoundException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student profile not found.',
+            ], 404);
+        }
+
+        $data = $request->validated();
+
+        if (! array_key_exists('studentId', $data)) {
+            $data['studentId'] = $profile->studentId;
+        }
+
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
+
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
+        }
+
+        if ($this->studentProfileInterface->isDuplicate($data, $id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student Assigned ALready to this Class',
+            ], 409);
+        }
+
+        $this->studentProfileInterface->update($id, $data);
+        $profile = $this->studentProfileInterface->findById($id, ['*'], ['student', 'grade', 'class']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student profile updated successfully.',
+            'data'    => $this->formatProfile($profile),
+        ]);
+    }
 }

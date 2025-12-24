@@ -113,6 +113,8 @@ Route::post('register', [RegisteredUserController::class, 'store']);
 Route::get('all-users', [UserController::class, 'index']);
 Route::get('users/search', [UserController::class, 'search']);
 
+Route::get('users/{userRole}/{sortBy}/search', [UserController::class, 'userTypeSearch']);
+
 Route::post('login', [LoginController::class, 'login']);
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 Route::post('reset-password', [ForgotPasswordController::class, 'otpVerifyFunction']);
@@ -277,6 +279,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-class/{year}/{grade}', [ComTeacherProfileController::class, 'getTeacherClasses']);
     Route::get('teacher-subject/{year}/{grade}/{class}/{medium}/subject', [ComTeacherProfileController::class, 'getTeacherSubject']);
 
+    Route::post('teacher-profiles/admin/{id}', [ComTeacherProfileController::class, 'updateByAdmin']);
+
+
 
 
     // Student profiles
@@ -287,10 +292,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('student-profiles/{id}', [ComStudentProfileController::class, 'destroy']);
     Route::get('student-profiles/{gradeId}/{classId}/{year}/{medium}/{subjectId}/{term}/marks', [ComStudentProfileController::class, 'getStudentMarks']);
 
+    Route::post('student-profiles/admin/{id}', [ComStudentProfileController::class, 'updateByAdmin']);
+
+
     // Student marks
     Route::get('student-marks', [StudentMarksController::class, 'index']);
     Route::post('student-marks', [StudentMarksController::class, 'store']);
     Route::get('student-marks/{id}', [StudentMarksController::class, 'show']);
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
+
+    //update user Active status
+    Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);
 });

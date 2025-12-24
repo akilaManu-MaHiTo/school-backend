@@ -42,7 +42,7 @@ class RegisterRequest extends FormRequest
 
             'mobile.required'             => 'Mobile is required.',
 
-            'employeeType'                => 'Employee Type is Required',
+            'employeeType'                => 'User Role is Required',
             'employeeNumber.required_if'  => 'Employee number is required when the user is a company employee.',
             'employeeNumber.unique'       => 'Employee number already exists.',
 
