@@ -51,10 +51,9 @@ class ClassReportController extends Controller
             ];
         })->values();
 
-        return response()->json([
-            'success' => true,
-            'data'    => $data,
-        ]);
+        return response()->json(
+            $data,
+        );
     }
 
     /**
