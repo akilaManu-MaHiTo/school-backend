@@ -295,5 +295,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
 
-    Route::get('class/{year}/{grade}/{class}/{examType}/report', [ClassReportController::class, 'getClassReport']);
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
+
 });
