@@ -7,6 +7,7 @@ use App\Models\ComGrades;
 use App\Models\ComStudentProfile;
 use App\Models\StudentMarks;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 
 class ClassReportController extends Controller
 {
@@ -56,15 +57,15 @@ class ClassReportController extends Controller
         ]);
     }
 
+    /**
+     * @param string $year
+     * @param int    $gradeId
+     * @param int    $classId
+     * @param string $examType
+     */
     public function getClassReportCard(string $year, int $gradeId, int $classId, string $examType): JsonResponse
     {
-        // Load all student profiles for this class and academic year
-        $studentProfiles = ComStudentProfile::query()
-            ->with(['student', 'grade', 'class'])
-            ->where('academicGradeId', $gradeId)
-            ->where('academicClassId', $classId)
-            ->where('academicYear', $year)
-            ->get();
+        $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
 
         if ($studentProfiles->isEmpty()) {
             return response()->json([
@@ -73,24 +74,66 @@ class ClassReportController extends Controller
             ]);
         }
 
+        $marks = $this->getMarksForProfiles($studentProfiles, $year, $examType);
+
+        $gradeModel = ComGrades::find($gradeId);
+        $classModel = ComClassMng::find($classId);
+
+        $studentCount = $studentProfiles->count();
+        $subjects     = $this->buildSubjectsPayload($marks);
+        $markData     = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+        $markData     = $this->assignPositions($markData);
+
+        $data = [
+            'className'    => $classModel?->className,
+            'grade'        => $gradeModel?->grade,
+            'studentCount' => $studentCount,
+            'subjects'     => $subjects,
+            'MarkData'     => $markData,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+    /**
+     * @return Collection<int, ComStudentProfile>
+     */
+    private function getStudentProfiles(string $year, int $gradeId, int $classId): Collection
+    {
+        return ComStudentProfile::query()
+            ->with(['student', 'grade', 'class'])
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->get();
+    }
+
+    /**
+     * @param Collection<int, ComStudentProfile> $studentProfiles
+     * @return Collection<int, StudentMarks>
+     */
+    private function getMarksForProfiles(Collection $studentProfiles, string $year, string $examType): Collection
+    {
         $studentProfileIds = $studentProfiles->pluck('id');
 
-        // Load marks for given year/term
-        $marks = StudentMarks::query()
+        return StudentMarks::query()
             ->with(['studentProfile.student', 'subject'])
             ->whereIn('studentProfileId', $studentProfileIds)
             ->where('academicYear', $year)
             ->where('academicTerm', $examType)
             ->get();
+    }
 
-        // High-level meta
-        $gradeModel = ComGrades::find($gradeId);
-        $classModel = ComClassMng::find($classId);
-
-        $studentCount = $studentProfiles->count();
-
-        // Subject list for the class/term
-        $subjects = $marks
+    /**
+     * @param Collection<int, StudentMarks> $marks
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildSubjectsPayload(Collection $marks): array
+    {
+        return $marks
             ->pluck('subject')
             ->filter()
             ->unique('id')
@@ -103,21 +146,28 @@ class ClassReportController extends Controller
                     'group'           => $subject->basketGroup,
                 ];
             })
-            ->values();
+            ->values()
+            ->all();
+    }
 
-        // Group marks by student profile
+    /**
+     * @param Collection<int, ComStudentProfile> $studentProfiles
+     * @param Collection<int, StudentMarks>      $marks
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildMarkDataPayload(Collection $studentProfiles, Collection $marks, int $studentCount): array
+    {
         $marksByStudent = $marks->groupBy('studentProfileId');
 
         $markData = [];
 
         foreach ($studentProfiles as $profile) {
-            $student = $profile->student;
+            $student      = $profile->student;
             $studentMarks = $marksByStudent->get($profile->id, collect());
 
-            // Build marks object keyed by subject and basket group
             $marksObject = [];
-            $totalMarks = 0.0;
-            $marksCount = 0;
+            $totalMarks  = 0.0;
+            $marksCount  = 0;
 
             foreach ($studentMarks as $mark) {
                 $subject = $mark->subject;
@@ -132,14 +182,12 @@ class ClassReportController extends Controller
                     $marksCount++;
                 }
 
-                // Key by subject name (you can adjust to subjectCode if preferred)
-                $subjectKey = $subject->subjectName;
+                $subjectKey                = $subject->subjectName;
                 $marksObject[$subjectKey] = [
                     'marks'   => $numericMark,
                     'subject' => $subject->subjectName,
                 ];
 
-                // For basket subjects, also provide group-level entry like Group1, Group2...
                 if ($subject->isBasketSubject ?? false) {
                     $groupKey = $subject->basketGroup;
                     if ($groupKey) {
@@ -156,42 +204,39 @@ class ClassReportController extends Controller
             $markData[] = [
                 'userName'         => $student?->userName,
                 'email'            => $student?->email,
-                'nameWithInitials' => $student?->name, // replace with initials field when available
-                'marks'            => [ $marksObject ],
+                'nameWithInitials' => $student?->name,
+                'marks'            => [$marksObject],
                 'averageOfMarks'   => $average,
-                // position will be assigned after sorting
                 'position'         => null,
             ];
         }
 
-        // Assign positions based on averageOfMarks (higher average => better rank)
+        return $markData;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $markData
+     * @return array<int, array<string, mixed>>
+     */
+    private function assignPositions(array $markData): array
+    {
         usort($markData, function (array $a, array $b) {
             return $b['averageOfMarks'] <=> $a['averageOfMarks'];
         });
 
-        $lastAverage = null;
+        $lastAverage  = null;
         $lastPosition = 0;
+
         foreach ($markData as $index => &$entry) {
             $currentAverage = $entry['averageOfMarks'];
             if ($lastAverage === null || $currentAverage < $lastAverage) {
-                $lastPosition = $index + 1; // 1-based
-                $lastAverage = $currentAverage;
+                $lastPosition = $index + 1;
+                $lastAverage  = $currentAverage;
             }
             $entry['position'] = $lastPosition;
         }
         unset($entry);
 
-        $data = [
-            'className'    => $classModel?->className,
-            'grade'        => $gradeModel?->grade,
-            'studentCount' => $studentCount,
-            'subjects'     => $subjects,
-            'MarkData'     => $markData,
-        ];
-
-        return response()->json([
-            'success' => true,
-            'data'    => $data,
-        ]);
+        return $markData;
     }
 }
