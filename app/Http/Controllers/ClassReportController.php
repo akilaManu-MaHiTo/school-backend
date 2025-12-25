@@ -57,6 +57,71 @@ class ClassReportController extends Controller
     }
 
     /**
+     * Return bar chart data for Term 1, Term 2 and Term 3 separately
+     * with total and average calculated for each term.
+     */
+    public function getClassAllBarChart(string $year, int $gradeId, int $classId): JsonResponse
+    {
+        // Find all student profiles for this class and academic year
+        $studentProfileIds = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->pluck('id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'term1' => [],
+                    'term2' => [],
+                    'term3' => [],
+                ],
+            ]);
+        }
+
+        $terms = [
+            'Term 1' => 'term1',
+            'Term 2' => 'term2',
+            'Term 3' => 'term3',
+        ];
+
+        $result = [];
+
+        foreach ($terms as $termLabel => $key) {
+            $rows = StudentMarks::query()
+                ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
+                ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+                ->where('student_marks.academicYear', $year)
+                ->where('student_marks.academicTerm', $termLabel)
+                ->where('student_marks.isAbsentStudent', false)
+                ->whereNotNull('student_marks.studentMark')
+                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, SUM(student_marks.studentMark) as totalMarks, COUNT(*) as studentCount')
+                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+                ->get();
+
+            $data = $rows->map(function ($row) {
+                $totalMarks   = (float) $row->totalMarks;
+                $studentCount = (int) $row->studentCount;
+
+                return [
+                    'subjectName'  => $row->subjectName,
+                    'totalMarks'   => $totalMarks,
+                    'average'      => $studentCount > 0 ? $totalMarks / $studentCount : 0.0,
+                    'studentCount' => $studentCount,
+                ];
+            })->values();
+
+            $result[$key] = $data;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+        ]);
+    }
+
+    /**
      * @param string $year
      * @param int    $gradeId
      * @param int    $classId

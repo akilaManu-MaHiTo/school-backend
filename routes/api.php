@@ -299,5 +299,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
 
     Route::get('class-report/{year}/{grade}/{class}/All/all-report-card', [ClassReportController::class, 'getClassAllReportCard']);
+    Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
+
 
 });
