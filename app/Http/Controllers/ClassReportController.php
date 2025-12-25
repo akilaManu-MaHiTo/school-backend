@@ -98,6 +98,74 @@ class ClassReportController extends Controller
     }
 
     /**
+     * Return class report cards for all standard terms (Term 1, Term 2, Term 3)
+     * in a single response. Each term's dataset follows the same basic format
+     * as getClassReportCard.
+     */
+    public function getClassAllReportCard(string $year, int $gradeId, int $classId): JsonResponse
+    {
+        $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
+
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'term1' => null,
+                    'term2' => null,
+                    'term3' => null,
+                ],
+            ]);
+        }
+
+        $gradeModel   = ComGrades::find($gradeId);
+        $classModel   = ComClassMng::find($classId);
+        $studentCount = $studentProfiles->count();
+
+        $terms = [
+            'Term 1' => 'term1',
+            'Term 2' => 'term2',
+            'Term 3' => 'term3',
+        ];
+
+        $result = [];
+
+        foreach ($terms as $termLabel => $key) {
+            $marks = $this->getMarksForProfiles($studentProfiles, $year, $termLabel);
+
+            if ($marks->isEmpty()) {
+                $result[$key] = [
+                    'term'         => $termLabel,
+                    'className'    => $classModel?->className,
+                    'grade'        => $gradeModel?->grade,
+                    'studentCount' => $studentCount,
+                    'subjects'     => [],
+                    'MarkData'     => [],
+                ];
+
+                continue;
+            }
+
+            $subjects = $this->buildSubjectsPayload($marks);
+            $markData = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+            $markData = $this->assignPositions($markData);
+
+            $result[$key] = [
+                'term'         => $termLabel,
+                'className'    => $classModel?->className,
+                'grade'        => $gradeModel?->grade,
+                'studentCount' => $studentCount,
+                'subjects'     => $subjects,
+                'MarkData'     => $markData,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+        ]);
+    }
+
+    /**
      * @return Collection<int, ComStudentProfile>
      */
     private function getStudentProfiles(string $year, int $gradeId, int $classId): Collection
@@ -175,15 +243,18 @@ class ClassReportController extends Controller
                 }
 
                 $numericMark = is_null($mark->studentMark) ? null : (float) $mark->studentMark;
+                $isAbsent    = (bool) $mark->isAbsentStudent;
 
-                if ($numericMark !== null && ! $mark->isAbsentStudent) {
+                if ($numericMark !== null && ! $isAbsent) {
                     $totalMarks += $numericMark;
                     $marksCount++;
                 }
 
+                $displayMark = $isAbsent ? 'Ab' : $numericMark;
+
                 $subjectKey                = $subject->subjectName;
                 $marksObject[$subjectKey] = [
-                    'marks'   => $numericMark,
+                    'marks'   => $displayMark,
                     'subject' => $subject->subjectName,
                     'isBasketSubject' => (bool)($subject->isBasketSubject ?? false),
                 ];
@@ -192,7 +263,7 @@ class ClassReportController extends Controller
                     $groupKey = $subject->basketGroup;
                     if ($groupKey) {
                         $marksObject[$groupKey] = [
-                            'marks'   => $numericMark,
+                            'marks'   => $displayMark,
                             'subject' => $subject->subjectName,
                         ];
                     }
