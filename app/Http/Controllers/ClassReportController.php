@@ -185,6 +185,7 @@ class ClassReportController extends Controller
                 $marksObject[$subjectKey] = [
                     'marks'   => $numericMark,
                     'subject' => $subject->subjectName,
+                    'isBasketSubject' => (bool)($subject->isBasketSubject ?? false),
                 ];
 
                 if ($subject->isBasketSubject ?? false) {
