@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\AdminControllers;
 
 use App\Http\Controllers\Controller;
@@ -83,12 +84,12 @@ class AdminController extends Controller
         $userData['permissionObject'] = $permission ? (array) $permission->permissionObject : [];
 
         $userData['assigneeLevel'] = collect($user->assigneeLevel)->map(function ($level) {
-        return [
-            'id'        => $level->id ?? null,
-            'levelId'   => $level->levelId ?? null,
-            'levelName' => $level->levelName ?? null,
-        ];
-    });
+            return [
+                'id'        => $level->id ?? null,
+                'levelId'   => $level->levelId ?? null,
+                'levelName' => $level->levelName ?? null,
+            ];
+        });
 
         return response()->json($userData, 200);
     }
@@ -96,36 +97,34 @@ class AdminController extends Controller
     public function update(Request $request, string $id)
     {
         $user = $this->userInterface->findById($id);
-
         $rules = [
             'availability' => 'nullable|boolean',
         ];
-
-        // Apply these rules only when availability is 1
-        if ($request->input('availability', $user->availability) == 1) {
-            $rules = array_merge($rules, [
-                'userType'         => 'required|numeric',
-                'department'       => 'nullable|string',
-                'assignedFactory'  => 'nullable|array',
-                'assigneeLevel'    => 'required|string',
-                'responsibleSection' => 'required|array',
-                'jobPosition'      => 'nullable|string',
-            ]);
-        }
-
         $request->validate($rules);
 
         $user->userType         = $request->input('userType', $user->userType);
-        $user->department       = $request->input('department', $user->department);
-        $user->assignedFactory  = $request->input('assignedFactory', $user->assignedFactory);
-        $user->assigneeLevel    = $request->input('assigneeLevel', $user->assigneeLevel);
-        $user->responsibleSection = $request->input('responsibleSection', $user->responsibleSection);
-        $user->jobPosition      = $request->input('jobPosition', $user->jobPosition);
         $user->availability     = $request->input('availability', $user->availability);
 
         $user->save();
-
         return response()->json($user->toArray(), 200);
+    }
+
+
+    public function updateActiveStatus(Request $request, string $id)
+    {
+        $user = $this->userInterface->findById($id);
+
+        $request->validate([
+            'availability' => 'required|boolean',
+        ]);
+
+        $user->availability = $request->input('availability');
+        $user->save();
+
+        return response()->json([
+            'message' => 'User active status updated successfully.',
+            'user'    => $user->toArray(),
+        ], 200);
     }
 
 
@@ -137,5 +136,4 @@ class AdminController extends Controller
             'assigneeLevels' => $sections,
         ], 200);
     }
-
 }

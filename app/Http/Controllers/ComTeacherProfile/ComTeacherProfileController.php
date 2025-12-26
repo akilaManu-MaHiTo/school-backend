@@ -360,4 +360,43 @@ class ComTeacherProfileController extends Controller
 
         return response()->json($subjects, 200);
     }
+
+    public function updateByAdmin(ComTeacherProfileRequest $request, int $id): JsonResponse
+    {
+        try {
+            $this->teacherProfileInterface->findById($id);
+        } catch (ModelNotFoundException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher profile not found.',
+            ], 404);
+        }
+
+
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $data = $request->validated();
+        $data['createdByUser'] = $id;
+        $data['teacherId'] = $id;
+
+
+        if ($this->teacherProfileInterface->isDuplicate($data, $id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher Academic Details already exists',
+            ], 409);
+        }
+
+        $this->teacherProfileInterface->update($id, $data);
+        $profile = $this->teacherProfileInterface->findById($id, ['*'], ['teacher', 'grade', 'subject', 'class']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Teacher profile updated successfully.',
+            'data'    => $this->formatProfile($profile),
+        ], 200);
+    }
 }

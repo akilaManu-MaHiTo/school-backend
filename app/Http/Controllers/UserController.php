@@ -305,6 +305,7 @@ class UserController extends Controller
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
         $user->email = $request->input('email', $user->email);
+        $user->nameWithInitials = $request->input('nameWithInitials', $user->nameWithInitials);
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
         $user->profileImage = ! empty($newImages)
@@ -442,6 +443,144 @@ class UserController extends Controller
 
             return $userArray;
         });
+
+        return response()->json($userData, 200);
+    }
+
+    public function userTypeSearch(Request $request, string $userRole, string $sortBy)
+    {
+        $keyword = $request->input('keyword');
+        if ($keyword) {
+            $users = $this->userInterface->search($keyword);
+        } else {
+            $users = $this->userInterface->All();
+        }
+        if (strtolower($userRole) !== 'all') {
+            $users = $users->filter(function ($user) use ($userRole) {
+                return isset($user->employeeType)
+                    && strcasecmp($user->employeeType, $userRole) === 0;
+            })->values();
+        }
+
+        $userData = $users->map(function ($user) {
+            $userArray = $user->toArray();
+
+            $permission = $this->comPermissionInterface->getById($user->userType);
+            $userArray['userType'] = [
+                'id' => $permission->id ?? null,
+                'userType' => $permission->userType ?? null,
+                'description' => $permission->description ?? null,
+            ];
+
+            $assigneeLevel = $this->assigneeLevelInterface->getById($user->assigneeLevel);
+            $userArray['userLevel'] = $assigneeLevel ? [
+                'id' => $assigneeLevel->id,
+                'levelId' => $assigneeLevel->levelId,
+                'levelName' => $assigneeLevel->levelName,
+            ] : [];
+
+            $profileImages = is_array($user->profileImage)
+                ? $user->profileImage
+                : json_decode($user->profileImage, true) ?? [];
+
+            $signedImages = [];
+            foreach ($profileImages as $uri) {
+                $signed = $this->profileImageService->getImageUrl($uri);
+                $signedImages[] = [
+                    'fileName' => $signed['fileName'] ?? null,
+                    'imageUrl' => $signed['signedUrl'] ?? null,
+                ];
+            }
+            $userArray['profileImage'] = $signedImages;
+            $teacherProfiles = $this->comTeacherProfileInterface->getByColumn(
+                ['teacherId' => $user->id],
+                ['*'],
+                ['grade', 'subject', 'class']
+            );
+
+            $userArray['userProfile'] = $teacherProfiles
+                ? $teacherProfiles->map(function ($profile) {
+                    return [
+                        'id' => $profile->id,
+                        'academicYear' => $profile->academicYear,
+                        'academicMedium' => $profile->academicMedium,
+                        'grade' => $profile->grade ? [
+                            'id' => $profile->grade->id,
+                            'grade' => $profile->grade->grade,
+                        ] : null,
+                        'subject' => $profile->subject ? [
+                            'id' => $profile->subject->id,
+                            'subjectCode' => $profile->subject->subjectCode,
+                            'subjectName' => $profile->subject->subjectName,
+                        ] : null,
+                        'class' => $profile->class ? [
+                            'id' => $profile->class->id,
+                            'className' => $profile->class->className,
+                        ] : null,
+                        'createdAt' => $profile->created_at,
+                        'updatedAt' => $profile->updated_at,
+                    ];
+                })->values()->toArray()
+                : [];
+            $studentProfile = $this->comStudentProfileInterface->getByColumn(
+                ['studentId' => $user->id],
+                ['*'],
+                ['grade', 'class']
+            );
+
+            $studentProfilesCollection = $studentProfile ? $studentProfile : collect();
+
+            $basketSubjectsLookup = $this->fetchBasketSubjects(
+                $studentProfilesCollection
+                    ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                    ->unique()
+                    ->values()
+                    ->all()
+            );
+
+            $userArray['studentProfile'] = $studentProfilesCollection
+                ->map(function ($profile) use ($basketSubjectsLookup) {
+                    $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
+                    return [
+                        'id' => $profile->id,
+                        'isStudentApproved' => $profile->isStudentApproved,
+                        'academicYear' => $profile->academicYear,
+                        'academicMedium' => $profile->academicMedium,
+                        'grade' => $profile->grade ? [
+                            'id' => $profile->grade->id,
+                            'grade' => $profile->grade->grade,
+                        ] : null,
+                        'class' => $profile->class ? [
+                            'id' => $profile->class->id,
+                            'className' => $profile->class->className,
+                        ] : null,
+                        'basketSubjectsIds' => $basketSubjectIds,
+                        'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
+                        'createdAt' => $profile->created_at,
+                        'updatedAt' => $profile->updated_at,
+                    ];
+                })
+                ->values()
+                ->toArray();
+            return $userArray;
+        });
+
+        $sortBy = strtolower($sortBy ?? 'user_id_desc');
+
+        switch ($sortBy) {
+            case 'user_id_asc':
+            case 'id_asc':
+            case 'asc':
+                $userData = $userData->sortBy('id')->values();
+                break;
+            case 'user_id_desc':
+            case 'id_desc':
+            case 'desc':
+            default:
+                $userData = $userData->sortByDesc('id')->values();
+                break;
+        }
 
         return response()->json($userData, 200);
     }
