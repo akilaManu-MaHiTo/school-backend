@@ -105,6 +105,7 @@ use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGReportingRecodeController;
 use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClassReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -301,6 +302,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-marks/{id}', [StudentMarksController::class, 'show']);
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
+
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
+
+    Route::get('class-report/{year}/{grade}/{class}/All/all-report-card', [ClassReportController::class, 'getClassAllReportCard']);
+    Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
+
 
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);
