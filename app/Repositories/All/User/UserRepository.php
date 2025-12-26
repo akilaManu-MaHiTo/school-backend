@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories\All\User;
 
 use App\Models\User;
@@ -39,7 +40,10 @@ class UserRepository extends BaseRepository implements UserInterface
     {
         return User::where('name', 'like', '%' . $keyword . '%')
             ->orWhere('email', 'like', '%' . $keyword . '%')
+            ->orWhere('mobile', 'like', '%' . $keyword . '%')
+            ->orWhere('address', 'like', '%' . $keyword . '%')
+            ->orWhere('nameWithInitials', 'like', '%' . $keyword . '%')
+            ->orWhere('userName', 'like', '%' . $keyword . '%')
             ->get();
     }
-
 }
