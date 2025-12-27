@@ -57,4 +57,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(ComPermission::class, 'userType', 'userType');
     }
+
+    public function studentProfile()
+    {
+        return $this->hasOne(ComStudentProfile::class, 'studentId', 'id');
+    }
 }

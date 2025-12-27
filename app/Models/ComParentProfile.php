@@ -15,8 +15,8 @@ class ComParentProfile extends Model
         'studentId',
     ];
 
-    public function studentProfile()
+    public function student()
     {
-        return $this->hasOne(ComStudentProfile::class, 'studentId', 'studentId');
+        return $this->belongsTo(User::class, 'studentId');
     }
 }
