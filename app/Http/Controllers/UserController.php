@@ -674,7 +674,7 @@ class UserController extends Controller
             $userArray['profileImage'] = $signedImages;
 
             return $userArray;
-        });
+        })->first();
 
         return response()->json($userData, 200);
     }
