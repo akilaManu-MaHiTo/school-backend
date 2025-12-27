@@ -320,4 +320,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);
+
+    Route::get('users/Student/search', [UserController::class, 'studentSearchByEmployeeId']);
 });

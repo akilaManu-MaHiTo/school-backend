@@ -12,11 +12,11 @@ class ComParentProfile extends Model
 
     protected $fillable = [
         'parentId',
-        'studentProfileId',
+        'studentId',
     ];
 
     public function studentProfile()
     {
-        return $this->belongsTo(ComStudentProfile::class, 'studentProfileId');
+        return $this->hasOne(ComStudentProfile::class, 'studentId', 'studentId');
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\ComParentProfile\ComParentProfileUpdateRequest;
 use App\Repositories\All\ComParentProfile\ComParentProfileInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class ComParentProfileController extends Controller
@@ -21,9 +22,14 @@ class ComParentProfileController extends Controller
 
     public function store(ComParentProfileStoreRequest $request): JsonResponse
     {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
         $data = $request->validated();
-
-        if ($this->parentProfileInterface->isDuplicate($data['parentId'], $data['studentProfileId'])) {
+        $userId = $user->id;
+        $data['parentId'] = $userId;
+        if ($this->parentProfileInterface->isDuplicate($userId, $data['studentId'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'This parent is already linked to this student profile.',
@@ -57,9 +63,9 @@ class ComParentProfileController extends Controller
         $data = $request->validated();
 
         $parentId = $data['parentId'] ?? $item->parentId;
-        $studentProfileId = $data['studentProfileId'] ?? $item->studentProfileId;
+        $studentId = $data['studentId'] ?? $item->studentId;
 
-        if ($this->parentProfileInterface->isDuplicate($parentId, $studentProfileId, $id)) {
+        if ($this->parentProfileInterface->isDuplicate($parentId, $studentId, $id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'This parent is already linked to this student profile.',

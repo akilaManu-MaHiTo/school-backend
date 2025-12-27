@@ -6,5 +6,5 @@ use App\Repositories\Base\EloquentRepositoryInterface;
 
 interface ComParentProfileInterface extends EloquentRepositoryInterface
 {
-	public function isDuplicate(int $parentId, int $studentProfileId, ?int $ignoreId = null): bool;
+	public function isDuplicate(int $parentId, int $studentId, ?int $ignoreId = null): bool;
 }

@@ -15,7 +15,7 @@ class ComParentProfileUpdateRequest extends FormRequest
     {
         return [
             'parentId' => ['sometimes', 'integer', 'exists:users,id'],
-            'studentProfileId' => ['sometimes', 'integer', 'exists:com_student_profiles,id'],
+			'studentId' => ['sometimes', 'integer', 'exists:users,id'],
         ];
     }
 }

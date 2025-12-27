@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
 
             $table->unsignedBigInteger('parentId')->required();
-            $table->unsignedBigInteger('studentProfileId')->required();
+            $table->unsignedBigInteger('studentId')->required();
 
             $table->foreign('parentId')->references('id')->on('users')->onDelete('restrict');
-            $table->foreign('studentProfileId')->references('id')->on('com_student_profiles')->onDelete('restrict');
+            $table->foreign('studentId')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

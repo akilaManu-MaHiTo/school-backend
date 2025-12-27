@@ -14,8 +14,8 @@ class ComParentProfileStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'parentId' => ['required', 'integer', 'exists:users,id'],
-            'studentProfileId' => ['required', 'integer', 'exists:com_student_profiles,id'],
+            'parentId' => ['nullable', 'integer','exists:users,id'],
+            'studentId' => ['required', 'integer','exists:users,id'],
         ];
     }
 }

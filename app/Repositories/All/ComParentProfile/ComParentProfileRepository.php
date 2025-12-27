@@ -12,11 +12,11 @@ class ComParentProfileRepository extends BaseRepository implements ComParentProf
         parent::__construct($model);
     }
 
-    public function isDuplicate(int $parentId, int $studentProfileId, ?int $ignoreId = null): bool
+    public function isDuplicate(int $parentId, int $studentId, ?int $ignoreId = null): bool
     {
         $query = $this->model->newQuery()
             ->where('parentId', $parentId)
-            ->where('studentProfileId', $studentProfileId);
+            ->where('studentId', $studentId);
 
         if ($ignoreId !== null) {
             $query->where('id', '!=', $ignoreId);

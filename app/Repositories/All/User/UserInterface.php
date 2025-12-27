@@ -12,4 +12,6 @@ interface UserInterface extends EloquentRepositoryInterface
     public function getByIds(array $ids);
     public function search($keyword);
 
+	public function searchStudentsByEmployeeNumber(string $employeeNumber);
+
 }
