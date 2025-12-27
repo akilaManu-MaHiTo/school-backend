@@ -176,46 +176,78 @@ class UserController extends Controller
             ->values()
             ->toArray();
 
+        // If the logged-in user is a parent, load the students linked to them
         $parentProfiles = $this->comParentProfileInterface->getByColumn(
             ['parentId' => $user->id],
             ['*'],
-            ['studentProfile.student', 'studentProfile.grade', 'studentProfile.class']
+            ['student']
         );
 
-        $parentProfilesCollection = $parentProfiles ? $parentProfiles : collect();
-
-        $userData['parentProfile'] = $parentProfilesCollection
-            ->map(function ($parentProfile) {
-                $studentProfile = $parentProfile->studentProfile;
-
-                if (! $studentProfile) {
+        $userData['parentProfile'] = $parentProfiles
+            ? $parentProfiles->map(function ($parentProfile) {
+                if (! $parentProfile->student) {
                     return null;
                 }
 
+                $student = $parentProfile->student;
+
+                // Load all academic profiles for this student
+                $studentProfiles = $this->comStudentProfileInterface->getByColumn(
+                    ['studentId' => $student->id],
+                    ['*'],
+                    ['grade', 'class']
+                );
+
+                $studentProfilesCollection = $studentProfiles ? $studentProfiles : collect();
+
+                $basketSubjectsLookup = $this->fetchBasketSubjects(
+                    $studentProfilesCollection
+                        ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                        ->unique()
+                        ->values()
+                        ->all()
+                );
+
+                $academicProfiles = $studentProfilesCollection
+                    ->map(function ($profile) use ($basketSubjectsLookup) {
+                        $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
+                        return [
+                            'id' => $profile->id,
+                            'isStudentApproved' => $profile->isStudentApproved,
+                            'academicYear' => $profile->academicYear,
+                            'academicMedium' => $profile->academicMedium,
+                            'grade' => $profile->grade ? [
+                                'id' => $profile->grade->id,
+                                'grade' => $profile->grade->grade,
+                            ] : null,
+                            'class' => $profile->class ? [
+                                'id' => $profile->class->id,
+                                'className' => $profile->class->className,
+                            ] : null,
+                            'basketSubjectsIds' => $basketSubjectIds,
+                            'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
+                            'createdAt' => $profile->created_at,
+                            'updatedAt' => $profile->updated_at,
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+
                 return [
-                    'id' => $studentProfile->id,
-                    'studentId' => $studentProfile->studentId,
-                    'isStudentApproved' => $studentProfile->isStudentApproved,
-                    'academicYear' => $studentProfile->academicYear,
-                    'academicMedium' => $studentProfile->academicMedium,
-                    'grade' => $studentProfile->grade ? [
-                        'id' => $studentProfile->grade->id,
-                        'grade' => $studentProfile->grade->grade,
-                    ] : null,
-                    'class' => $studentProfile->class ? [
-                        'id' => $studentProfile->class->id,
-                        'className' => $studentProfile->class->className,
-                    ] : null,
-                    'student' => $studentProfile->student ? [
-                        'id' => $studentProfile->student->id,
-                        'name' => $studentProfile->student->name,
-                        'email' => $studentProfile->student->email,
-                    ] : null,
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'mobile' => $student->mobile,
+                    'gender' => $student->gender,
+                    'employeeId' => $student->employeeNumber,
+                    'academicProfiles' => $academicProfiles,
                 ];
             })
             ->filter()
             ->values()
-            ->toArray();
+            ->toArray()
+            : [];
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         $userData['assigneeLevelObject'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         return response()->json($userData, 200);
