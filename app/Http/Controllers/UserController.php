@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Notifications\EmailChangeOTPsend\SendOtpEmailChange;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
+use App\Repositories\All\ComParentProfile\ComParentProfileInterface;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
 use App\Repositories\All\ComPermission\ComPermissionInterface;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
@@ -37,6 +38,8 @@ class UserController extends Controller
 
     protected $comStudentProfileInterface;
 
+    protected $comParentProfileInterface;
+
     public function __construct(
         UserInterface $userInterface,
         ComPermissionInterface $comPermissionInterface,
@@ -46,6 +49,7 @@ class UserController extends Controller
         ComOrganizationInterface $comOrganizationInterface,
         OrganizationService $organizationService,
         ComStudentProfileInterface $comStudentProfileInterface,
+        ComParentProfileInterface $comParentProfileInterface,
 
     ) {
         $this->userInterface = $userInterface;
@@ -56,6 +60,7 @@ class UserController extends Controller
         $this->organizationService = $organizationService;
         $this->comOrganizationInterface = $comOrganizationInterface;
         $this->comStudentProfileInterface = $comStudentProfileInterface;
+        $this->comParentProfileInterface = $comParentProfileInterface;
     }
 
     public function show(Request $request)
@@ -168,6 +173,47 @@ class UserController extends Controller
                     'updatedAt' => $profile->updated_at,
                 ];
             })
+            ->values()
+            ->toArray();
+
+        $parentProfiles = $this->comParentProfileInterface->getByColumn(
+            ['parentId' => $user->id],
+            ['*'],
+            ['studentProfile.student', 'studentProfile.grade', 'studentProfile.class']
+        );
+
+        $parentProfilesCollection = $parentProfiles ? $parentProfiles : collect();
+
+        $userData['parentProfile'] = $parentProfilesCollection
+            ->map(function ($parentProfile) {
+                $studentProfile = $parentProfile->studentProfile;
+
+                if (! $studentProfile) {
+                    return null;
+                }
+
+                return [
+                    'id' => $studentProfile->id,
+                    'studentId' => $studentProfile->studentId,
+                    'isStudentApproved' => $studentProfile->isStudentApproved,
+                    'academicYear' => $studentProfile->academicYear,
+                    'academicMedium' => $studentProfile->academicMedium,
+                    'grade' => $studentProfile->grade ? [
+                        'id' => $studentProfile->grade->id,
+                        'grade' => $studentProfile->grade->grade,
+                    ] : null,
+                    'class' => $studentProfile->class ? [
+                        'id' => $studentProfile->class->id,
+                        'className' => $studentProfile->class->className,
+                    ] : null,
+                    'student' => $studentProfile->student ? [
+                        'id' => $studentProfile->student->id,
+                        'name' => $studentProfile->student->name,
+                        'email' => $studentProfile->student->email,
+                    ] : null,
+                ];
+            })
+            ->filter()
             ->values()
             ->toArray();
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);

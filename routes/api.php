@@ -19,6 +19,7 @@ use App\Http\Controllers\SubjectControllers\ComSubjectsController;
 use App\Http\Controllers\ClassMngControllers\ComClassMngController;
 use App\Http\Controllers\ComStudentProfileController\ComStudentProfileController;
 use App\Http\Controllers\ComTeacherProfile\ComTeacherProfileController;
+use App\Http\Controllers\ComParentProfileController;
 use App\Http\Controllers\GradesControllers\ComGradesController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentCategoryController;
 use App\Http\Controllers\HealthAndSaftyControllers\AiAccidentInjuryTypeController;
@@ -294,6 +295,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-profiles/{gradeId}/{classId}/{year}/{medium}/{subjectId}/{term}/marks', [ComStudentProfileController::class, 'getStudentMarks']);
 
     Route::post('student-profiles/admin/{id}', [ComStudentProfileController::class, 'updateByAdmin']);
+
+    // Parent profiles
+    Route::get('parent-profiles', [ComParentProfileController::class, 'index']);
+    Route::post('parent-profiles', [ComParentProfileController::class, 'store']);
+    Route::get('parent-profiles/{id}', [ComParentProfileController::class, 'show']);
+    Route::post('parent-profiles/{id}', [ComParentProfileController::class, 'update']);
+    Route::delete('parent-profiles/{id}', [ComParentProfileController::class, 'destroy']);
 
 
     // Student marks

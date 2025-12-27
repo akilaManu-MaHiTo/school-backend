@@ -30,6 +30,8 @@ use App\Repositories\All\ComTeacherProfile\ComTeacherProfileInterface;
 use App\Repositories\All\ComTeacherProfile\ComTeacherProfileRepository;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileRepository;
+use App\Repositories\All\ComParentProfile\ComParentProfileInterface;
+use App\Repositories\All\ComParentProfile\ComParentProfileRepository;
 use App\Repositories\All\ComJobPosition\JobPositionInterface;
 use App\Repositories\All\ComJobPosition\JobPositionRepository;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
@@ -298,6 +300,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ComSubjectsInterface::class, ComSubjectsRepository::class);
         $this->app->bind(ComTeacherProfileInterface::class, ComTeacherProfileRepository::class);
         $this->app->bind(ComStudentProfileInterface::class, ComStudentProfileRepository::class);
+            $this->app->bind(ComParentProfileInterface::class, ComParentProfileRepository::class);
         $this->app->bind(StudentMarksInterface::class, StudentMarksRepository::class);
 
     }
