@@ -235,6 +235,7 @@ class UserController extends Controller
                     ->toArray();
 
                 return [
+                    'parentProfileId' => $parentProfile->id,
                     'id' => $student->id,
                     'name' => $student->name,
                     'email' => $student->email,
@@ -641,6 +642,80 @@ class UserController extends Controller
                 })
                 ->values()
                 ->toArray();
+
+            // If the user is a parent, load the students linked to them
+            $parentProfiles = $this->comParentProfileInterface->getByColumn(
+                ['parentId' => $user->id],
+                ['*'],
+                ['student']
+            );
+
+            $userArray['parentProfile'] = $parentProfiles
+                ? $parentProfiles->map(function ($parentProfile) {
+                    if (! $parentProfile->student) {
+                        return null;
+                    }
+
+                    $student = $parentProfile->student;
+
+                    // Load all academic profiles for this student
+                    $studentProfiles = $this->comStudentProfileInterface->getByColumn(
+                        ['studentId' => $student->id],
+                        ['*'],
+                        ['grade', 'class']
+                    );
+
+                    $studentProfilesCollection = $studentProfiles ? $studentProfiles : collect();
+
+                    $basketSubjectsLookup = $this->fetchBasketSubjects(
+                        $studentProfilesCollection
+                            ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                            ->unique()
+                            ->values()
+                            ->all()
+                    );
+
+                    $academicProfiles = $studentProfilesCollection
+                        ->map(function ($profile) use ($basketSubjectsLookup) {
+                            $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
+                            return [
+                                'id' => $profile->id,
+                                'isStudentApproved' => $profile->isStudentApproved,
+                                'academicYear' => $profile->academicYear,
+                                'academicMedium' => $profile->academicMedium,
+                                'grade' => $profile->grade ? [
+                                    'id' => $profile->grade->id,
+                                    'grade' => $profile->grade->grade,
+                                ] : null,
+                                'class' => $profile->class ? [
+                                    'id' => $profile->class->id,
+                                    'className' => $profile->class->className,
+                                ] : null,
+                                'basketSubjectsIds' => $basketSubjectIds,
+                                'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
+                                'createdAt' => $profile->created_at,
+                                'updatedAt' => $profile->updated_at,
+                            ];
+                        })
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'parentProfileId' => $parentProfile->id,
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'email' => $student->email,
+                        'mobile' => $student->mobile,
+                        'gender' => $student->gender,
+                        'employeeId' => $student->employeeNumber,
+                        'academicProfiles' => $academicProfiles,
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->toArray()
+                : [];
             return $userArray;
         });
 
