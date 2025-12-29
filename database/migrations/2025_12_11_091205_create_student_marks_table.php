@@ -16,6 +16,7 @@ return new class extends Migration
 
             $table->unsignedBigInteger('studentProfileId')->required();
             $table->unsignedBigInteger('academicSubjectId')->required();
+            $table->unsignedBigInteger('createdByTeacher')->required();
 
             $table->string('studentMark')->nullable();
             $table->string('markGrade')->nullable();
@@ -25,6 +26,8 @@ return new class extends Migration
 
             $table->foreign('studentProfileId')->references('id')->on('com_student_profiles')->onDelete('restrict');
             $table->foreign('academicSubjectId')->references('id')->on('com_subjects')->onDelete('restrict');
+            $table->foreign('createdByTeacher')->references('id')->on('users')->onDelete('restrict');
+
 
             $table->timestamps();
         });

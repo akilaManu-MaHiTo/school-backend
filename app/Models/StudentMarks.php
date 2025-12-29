@@ -22,6 +22,7 @@ class StudentMarks extends Model
         'academicYear',
         'academicTerm',
         'isAbsentStudent',
+        'createdByTeacher',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class StudentMarks extends Model
         'academicYear'       => 'string',
         'academicTerm'       => 'string',
         'isAbsentStudent'    => 'boolean',
+        'createdByTeacher'   => 'integer',
     ];
 
     public function studentProfile(): BelongsTo
@@ -42,5 +44,10 @@ class StudentMarks extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(ComSubjects::class, 'academicSubjectId');
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'createdByTeacher');
     }
 }
