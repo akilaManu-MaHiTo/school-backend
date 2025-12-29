@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Notifications\EmailChangeOTPsend\SendOtpEmailChange;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
+use App\Repositories\All\ComParentProfile\ComParentProfileInterface;
 use App\Repositories\All\ComOrganization\ComOrganizationInterface;
 use App\Repositories\All\ComPermission\ComPermissionInterface;
 use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
@@ -37,6 +38,8 @@ class UserController extends Controller
 
     protected $comStudentProfileInterface;
 
+    protected $comParentProfileInterface;
+
     public function __construct(
         UserInterface $userInterface,
         ComPermissionInterface $comPermissionInterface,
@@ -46,6 +49,7 @@ class UserController extends Controller
         ComOrganizationInterface $comOrganizationInterface,
         OrganizationService $organizationService,
         ComStudentProfileInterface $comStudentProfileInterface,
+        ComParentProfileInterface $comParentProfileInterface,
 
     ) {
         $this->userInterface = $userInterface;
@@ -56,6 +60,7 @@ class UserController extends Controller
         $this->organizationService = $organizationService;
         $this->comOrganizationInterface = $comOrganizationInterface;
         $this->comStudentProfileInterface = $comStudentProfileInterface;
+        $this->comParentProfileInterface = $comParentProfileInterface;
     }
 
     public function show(Request $request)
@@ -170,6 +175,80 @@ class UserController extends Controller
             })
             ->values()
             ->toArray();
+
+        // If the logged-in user is a parent, load the students linked to them
+        $parentProfiles = $this->comParentProfileInterface->getByColumn(
+            ['parentId' => $user->id],
+            ['*'],
+            ['student']
+        );
+
+        $userData['parentProfile'] = $parentProfiles
+            ? $parentProfiles->map(function ($parentProfile) {
+                if (! $parentProfile->student) {
+                    return null;
+                }
+
+                $student = $parentProfile->student;
+
+                // Load all academic profiles for this student
+                $studentProfiles = $this->comStudentProfileInterface->getByColumn(
+                    ['studentId' => $student->id],
+                    ['*'],
+                    ['grade', 'class']
+                );
+
+                $studentProfilesCollection = $studentProfiles ? $studentProfiles : collect();
+
+                $basketSubjectsLookup = $this->fetchBasketSubjects(
+                    $studentProfilesCollection
+                        ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                        ->unique()
+                        ->values()
+                        ->all()
+                );
+
+                $academicProfiles = $studentProfilesCollection
+                    ->map(function ($profile) use ($basketSubjectsLookup) {
+                        $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
+                        return [
+                            'id' => $profile->id,
+                            'isStudentApproved' => $profile->isStudentApproved,
+                            'academicYear' => $profile->academicYear,
+                            'academicMedium' => $profile->academicMedium,
+                            'grade' => $profile->grade ? [
+                                'id' => $profile->grade->id,
+                                'grade' => $profile->grade->grade,
+                            ] : null,
+                            'class' => $profile->class ? [
+                                'id' => $profile->class->id,
+                                'className' => $profile->class->className,
+                            ] : null,
+                            'basketSubjectsIds' => $basketSubjectIds,
+                            'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
+                            'createdAt' => $profile->created_at,
+                            'updatedAt' => $profile->updated_at,
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+
+                return [
+                    'parentProfileId' => $parentProfile->id,
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'mobile' => $student->mobile,
+                    'gender' => $student->gender,
+                    'employeeId' => $student->employeeNumber,
+                    'academicProfiles' => $academicProfiles,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->toArray()
+            : [];
         $userData['userLevel'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         $userData['assigneeLevelObject'] = $this->assigneeLevelInterface->getById($user->assigneeLevel);
         return response()->json($userData, 200);
@@ -563,6 +642,80 @@ class UserController extends Controller
                 })
                 ->values()
                 ->toArray();
+
+            // If the user is a parent, load the students linked to them
+            $parentProfiles = $this->comParentProfileInterface->getByColumn(
+                ['parentId' => $user->id],
+                ['*'],
+                ['student']
+            );
+
+            $userArray['parentProfile'] = $parentProfiles
+                ? $parentProfiles->map(function ($parentProfile) {
+                    if (! $parentProfile->student) {
+                        return null;
+                    }
+
+                    $student = $parentProfile->student;
+
+                    // Load all academic profiles for this student
+                    $studentProfiles = $this->comStudentProfileInterface->getByColumn(
+                        ['studentId' => $student->id],
+                        ['*'],
+                        ['grade', 'class']
+                    );
+
+                    $studentProfilesCollection = $studentProfiles ? $studentProfiles : collect();
+
+                    $basketSubjectsLookup = $this->fetchBasketSubjects(
+                        $studentProfilesCollection
+                            ->flatMap(fn($profile) => $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null))
+                            ->unique()
+                            ->values()
+                            ->all()
+                    );
+
+                    $academicProfiles = $studentProfilesCollection
+                        ->map(function ($profile) use ($basketSubjectsLookup) {
+                            $basketSubjectIds = $this->normalizeBasketSubjectIds($profile->basketSubjectsIds ?? null);
+
+                            return [
+                                'id' => $profile->id,
+                                'isStudentApproved' => $profile->isStudentApproved,
+                                'academicYear' => $profile->academicYear,
+                                'academicMedium' => $profile->academicMedium,
+                                'grade' => $profile->grade ? [
+                                    'id' => $profile->grade->id,
+                                    'grade' => $profile->grade->grade,
+                                ] : null,
+                                'class' => $profile->class ? [
+                                    'id' => $profile->class->id,
+                                    'className' => $profile->class->className,
+                                ] : null,
+                                'basketSubjectsIds' => $basketSubjectIds,
+                                'basketSubjects' => $this->formatBasketSubjects($basketSubjectIds, $basketSubjectsLookup),
+                                'createdAt' => $profile->created_at,
+                                'updatedAt' => $profile->updated_at,
+                            ];
+                        })
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'parentProfileId' => $parentProfile->id,
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'email' => $student->email,
+                        'mobile' => $student->mobile,
+                        'gender' => $student->gender,
+                        'employeeId' => $student->employeeNumber,
+                        'academicProfiles' => $academicProfiles,
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->toArray()
+                : [];
             return $userArray;
         });
 
@@ -581,6 +734,54 @@ class UserController extends Controller
                 $userData = $userData->sortByDesc('id')->values();
                 break;
         }
+
+        return response()->json($userData, 200);
+    }
+
+    public function studentSearchByEmployeeId(Request $request)
+    {
+        $employeeId = $request->input('employeeId');
+
+        if (! $employeeId) {
+            return response()->json(['message' => 'employeeId is required'], 400);
+        }
+
+        $users = $this->userInterface->searchStudentsByEmployeeNumber($employeeId);
+
+        $userData = $users->map(function ($user) {
+            $userArray = $user->toArray();
+
+            $permission = $this->comPermissionInterface->getById($user->userType);
+            $userArray['userType'] = [
+                'id' => $permission->id ?? null,
+                'userType' => $permission->userType ?? null,
+                'description' => $permission->description ?? null,
+            ];
+
+            $assigneeLevel = $this->assigneeLevelInterface->getById($user->assigneeLevel);
+            $userArray['userLevel'] = $assigneeLevel ? [
+                'id' => $assigneeLevel->id,
+                'levelId' => $assigneeLevel->levelId,
+                'levelName' => $assigneeLevel->levelName,
+            ] : [];
+
+            $profileImages = is_array($user->profileImage)
+                ? $user->profileImage
+                : json_decode($user->profileImage, true) ?? [];
+
+            $signedImages = [];
+            foreach ($profileImages as $uri) {
+                $signed = $this->profileImageService->getImageUrl($uri);
+                $signedImages[] = [
+                    'fileName' => $signed['fileName'] ?? null,
+                    'imageUrl' => $signed['signedUrl'] ?? null,
+                ];
+            }
+
+            $userArray['profileImage'] = $signedImages;
+
+            return $userArray;
+        })->first();
 
         return response()->json($userData, 200);
     }

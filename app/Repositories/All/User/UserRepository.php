@@ -46,4 +46,11 @@ class UserRepository extends BaseRepository implements UserInterface
             ->orWhere('userName', 'like', '%' . $keyword . '%')
             ->get();
     }
+
+	public function searchStudentsByEmployeeNumber(string $employeeNumber)
+	{
+		return User::where('employeeNumber', $employeeNumber)
+			->where('employeeType', 'Student')
+			->get();
+	}
 }
