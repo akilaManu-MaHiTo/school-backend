@@ -104,6 +104,7 @@ use App\Http\Controllers\SustainabilityAppsControllers\SaSrPillarsController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGController;
 
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGReportingRecodeController;
+use App\Http\Controllers\MarkCheckingReportController;
 use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
@@ -313,10 +314,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
-
     Route::get('class-report/{year}/{grade}/{class}/All/all-report-card', [ClassReportController::class, 'getClassAllReportCard']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
 
+    Route::get('mark-check/{year}/{grade}/{examType}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
 
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);

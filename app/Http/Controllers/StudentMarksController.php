@@ -7,6 +7,7 @@ use App\Models\StudentMarks;
 use App\Repositories\All\StudentMarks\StudentMarksInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class StudentMarksController extends Controller
@@ -27,13 +28,18 @@ class StudentMarksController extends Controller
 
     public function store(StudentMarksRequest $request): JsonResponse
     {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         $payload = $request->validated();
 
         if (($payload['isAbsentStudent'] ?? false) === true) {
             $payload['studentMark'] = null;
             $payload['markGrade'] = null;
         }
-
+        $payload['createdByTeacher'] = $user->id;
         try {
             $mark = $this->studentMarksInterface->create($payload);
         } catch (\Throwable $throwable) {
