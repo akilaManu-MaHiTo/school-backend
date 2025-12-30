@@ -25,10 +25,9 @@
 
             <p style="margin-top: 20px;">Please use this OTP to proceed with your password reset. This OTP expires in 5 minutes.</p>
             <p>If you did not request this change, please ignore this email.</p>
-            <p style="font-size: 16px; color: #333; font-weight: bold; margin: 5px 0;">The {{ $organizationFactoryName }} Factory Team</p>
         </div>
         <div style="text-align: center; padding: 15px; background-color: #3b82f6;">
-            <p style="font-size: 12px; color: #ffffff;">&copy; {{ date('Y') }} chasseur-dynamics Group. All rights reserved.</p>
+            <p style="font-size: 12px; color: #ffffff;">&copy; {{ date('Y') }} Sky Smart Technology. All rights reserved.</p>
         </div>
     </div>
 </body>
