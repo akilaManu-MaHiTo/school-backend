@@ -133,9 +133,12 @@ class ClassReportController extends Controller
 
         if ($studentProfileIds->isEmpty()) {
             return response()->json([
-                'term1' => [],
-                'term2' => [],
-                'term3' => [],
+                'success' => true,
+                'data'    => [
+                    'term1' => [],
+                    'term2' => [],
+                    'term3' => [],
+                ],
             ]);
         }
 
@@ -208,9 +211,12 @@ class ClassReportController extends Controller
 
         if ($studentProfileIds->isEmpty()) {
             return response()->json([
-                'term1' => [],
-                'term2' => [],
-                'term3' => [],
+                'success' => true,
+                'data'    => [
+                    'term1' => [],
+                    'term2' => [],
+                    'term3' => [],
+                ],
             ]);
         }
 
@@ -249,9 +255,10 @@ class ClassReportController extends Controller
             $result[$key] = $data;
         }
 
-        return response()->json(
-            $result,
-        );
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+        ]);
     }
 
     /**
@@ -357,9 +364,10 @@ class ClassReportController extends Controller
             ];
         }
 
-        return response()->json(
-            $result,
-        );
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+        ]);
     }
 
     /**
