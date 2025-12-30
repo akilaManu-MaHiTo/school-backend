@@ -27,7 +27,7 @@ class ComSubjectsRequest extends FormRequest
             'subjectName' => 'required|string',
             'isBasketSubject' => 'required|boolean',
             'subjectMedium' => 'required|string',
-            'basketGroup' => 'enum|nullable',
+            'basketGroup' => 'nullable|in:Group 1,Group 2,Group 3',
         ];
     }
 }
