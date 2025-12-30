@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->enum('employeeType', ['Student', 'Teacher', 'Parent'])->default('Student');
             $table->string('employeeNumber')->nullable()->unique();
-            $table->string('mobile')->nullable()->unique();
+            $table->string('mobile')->nullable();
             $table->rememberToken();
             $table->string('otp')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
