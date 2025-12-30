@@ -262,6 +262,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('subject/{subjectId}', [ComSubjectsController::class, 'update']);
     Route::delete('subject/{subjectId}', [ComSubjectsController::class, 'destroy']);
     Route::get('all-subjects', [ComSubjectsController::class, 'getSubjects']);
+    Route::get('group1-subjects', [ComSubjectsController::class, 'getSubjectsByGroup1']);
+    Route::get('group2-subjects', [ComSubjectsController::class, 'getSubjectsByGroup2']);
+    Route::get('group3-subjects', [ComSubjectsController::class, 'getSubjectsByGroup3']);
+
 
     // Classes (ComClassMng)
     Route::post('class', [ComClassMngController::class, 'store']);
@@ -314,6 +318,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/{markGrade}/bar-chart', [ClassReportController::class, 'getClassBarChartByMarkGrade']);
+    Route::get('class-report/{year}/{grade}/{class}/All/{markGrade}/all-bar-chart', [ClassReportController::class, 'getClassAllBarChartByMarkGrade']);
+
     Route::get('class-report/{year}/{grade}/{class}/All/all-report-card', [ClassReportController::class, 'getClassAllReportCard']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
 

@@ -223,4 +223,38 @@ class ComSubjectsController extends Controller
         $comSubjects = $comSubjects->sortBy('subjectName')->values();
         return response()->json($comSubjects, 200);
     }
+
+    public function getSubjectsByGroup1()
+    {
+        $filtered = $this->filterSubjectsByGroup('Group 1');
+        return response()->json($filtered, 200);
+    }
+
+    public function getSubjectsByGroup2()
+    {
+        $filtered = $this->filterSubjectsByGroup('Group 2');
+        return response()->json($filtered, 200);
+    }
+
+    public function getSubjectsByGroup3()
+    {
+        $filtered = $this->filterSubjectsByGroup('Group 3');
+        return response()->json($filtered, 200);
+    }
+
+    /**
+     * Filter subjects that are basket subjects and belong to the given group name.
+     */
+    private function filterSubjectsByGroup(string $groupName)
+    {
+        $comSubjects = $this->comSubjectsInterface->All();
+
+        $filtered = $comSubjects->filter(function ($item) use ($groupName) {
+            $isBasket = $item->isBasketSubject === true || $item->isBasketSubject === 1 || $item->isBasketSubject === '1';
+            $group = isset($item->basketGroup) ? (string)$item->basketGroup : '';
+            return $isBasket && trim($group) === $groupName;
+        })->sortBy('subjectName')->values();
+
+        return $filtered;
+    }
 }

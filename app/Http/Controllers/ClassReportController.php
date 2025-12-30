@@ -57,6 +57,146 @@ class ClassReportController extends Controller
     }
 
     /**
+     * Return per-subject counts for a specific mark grade (A, B, C, ...).
+     * Defaults to "A" when no grade is provided.
+     */
+    public function getClassBarChartByMarkGrade(string $year, int $gradeId, int $classId, string $examType, string $markGrade = 'A'): JsonResponse
+    {
+        // Normalize mark grade to upper-case
+        $markGrade = strtoupper($markGrade);
+
+        // Find all student profiles for this class and academic year
+        $studentProfileIds = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->pluck('id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => [],
+            ]);
+        }
+
+        // Get the distinct subjects for this set of student profiles and term
+        $subjects = StudentMarks::query()
+            ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
+            ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+            ->where('student_marks.academicYear', $year)
+            ->where('student_marks.academicTerm', $examType)
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName')
+            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+            ->get();
+
+        // Aggregate counts per subject for the given term and mark grade
+        $counts = StudentMarks::query()
+            ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+            ->where('student_marks.academicYear', $year)
+            ->where('student_marks.academicTerm', $examType)
+            ->where('student_marks.isAbsentStudent', false)
+            ->whereNotNull('student_marks.studentMark')
+            ->where('student_marks.markGrade', $markGrade)
+            ->selectRaw('student_marks.academicSubjectId as subjectId, COUNT(*) as gradeCount')
+            ->groupBy('student_marks.academicSubjectId')
+            ->pluck('gradeCount', 'subjectId');
+
+        $data = $subjects->map(function ($subject) use ($counts) {
+            $subjectId = $subject->subjectId;
+            $count = isset($counts[$subjectId]) ? (int) $counts[$subjectId] : 0;
+
+            return [
+                'subjectName' => $subject->subjectName,
+                'count'       => $count,
+            ];
+        })->values();
+
+        return response()->json(
+            $data,
+        );
+    }
+
+    /**
+     * Return per-term, per-subject counts for a specific mark grade (A, B, C, ...).
+     * Example response: ['term1' => [...], 'term2' => [...], 'term3' => [...]]
+     */
+    public function getClassAllBarChartByMarkGrade(string $year, int $gradeId, int $classId, string $markGrade = 'A'): JsonResponse
+    {
+        $markGrade = strtoupper($markGrade);
+
+        // Find all student profiles for this class and academic year
+        $studentProfileIds = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->pluck('id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'term1' => [],
+                    'term2' => [],
+                    'term3' => [],
+                ],
+            ]);
+        }
+
+        $terms = [
+            'Term 1' => 'term1',
+            'Term 2' => 'term2',
+            'Term 3' => 'term3',
+        ];
+
+        $result = [];
+
+        foreach ($terms as $termLabel => $key) {
+            // Get distinct subjects for this term
+            $subjects = StudentMarks::query()
+                ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
+                ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+                ->where('student_marks.academicYear', $year)
+                ->where('student_marks.academicTerm', $termLabel)
+                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName')
+                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+                ->get();
+
+            if ($subjects->isEmpty()) {
+                $result[$key] = [];
+                continue;
+            }
+
+            // Get counts for provided mark grade per subject for this term
+            $counts = StudentMarks::query()
+                ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+                ->where('student_marks.academicYear', $year)
+                ->where('student_marks.academicTerm', $termLabel)
+                ->where('student_marks.isAbsentStudent', false)
+                ->whereNotNull('student_marks.studentMark')
+                ->where('student_marks.markGrade', $markGrade)
+                ->selectRaw('student_marks.academicSubjectId as subjectId, COUNT(*) as gradeCount')
+                ->groupBy('student_marks.academicSubjectId')
+                ->pluck('gradeCount', 'subjectId');
+
+            $data = $subjects->map(function ($subject) use ($counts) {
+                $subjectId = $subject->subjectId;
+                $count = isset($counts[$subjectId]) ? (int) $counts[$subjectId] : 0;
+
+                return [
+                    'subjectName' => $subject->subjectName,
+                    'count'       => $count,
+                ];
+            })->values();
+
+            $result[$key] = $data;
+        }
+
+        return response()->json(
+            $result,
+        );
+    }
+
+    /**
      * Return bar chart data for Term 1, Term 2 and Term 3 separately
      * with total and average calculated for each term.
      */
