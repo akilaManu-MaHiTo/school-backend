@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('com_grades', function (Blueprint $table) {
             $table->id();
             $table->string('grade');
+            $table->unsignedBigInteger('createdBy')->nullable();
+            $table->foreign('createdBy')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

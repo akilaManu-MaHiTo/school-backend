@@ -8,6 +8,7 @@ use App\Http\Requests\ComSubjects\ComSubjectsRequest;
 use App\Models\ComSubjects;
 use App\Repositories\All\ComSubjects\ComSubjectsInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ComSubjectsController extends Controller
 {
@@ -72,7 +73,8 @@ class ComSubjectsController extends Controller
     public function store(ComSubjectsRequest $request)
     {
         $data = $request->validated();
-
+$user = Auth::user();
+$userId = $user->id;
         $subjectName = $data['subjectName'] ?? null;
         $subjectCode = $data['subjectCode'] ?? null;
 
@@ -110,6 +112,7 @@ class ComSubjectsController extends Controller
                 'message' => 'Subject code already exists.'
             ], 422);
         }
+        $data['createdBy'] = $userId;
         $subject = $this->comSubjectsInterface->create($data);
 
         return response()->json($subject, 201);
@@ -184,6 +187,8 @@ class ComSubjectsController extends Controller
                 'message' => 'Subject code already exists.'
             ], 422);
         }
+        $userId = Auth::id();
+        $data['createdBy'] = $userId;
 
         $updated = $this->comSubjectsInterface->update($id, $data);
 

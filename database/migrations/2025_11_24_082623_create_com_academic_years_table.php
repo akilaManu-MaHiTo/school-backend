@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('year');
             $table->enum('status', ['Ongoing', 'Finished'])->default('Ongoing')->nullable();
+            $table->unsignedBigInteger('createdBy')->nullable();
+            $table->foreign('createdBy')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

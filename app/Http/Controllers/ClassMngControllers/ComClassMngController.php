@@ -7,6 +7,7 @@ use App\Http\Requests\ComClassMng\ComClassMngRequest;
 use App\Models\ComClassMng;
 use App\Repositories\All\ComClassMng\ComClassMngInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ComClassMngController extends Controller
 {
@@ -32,6 +33,8 @@ class ComClassMngController extends Controller
      */
     public function store(ComClassMngRequest $request)
     {
+        $user = Auth::user();
+        $userId = $user->id;
         $data = $request->validated();
         $className = $data['className'] ?? null;
 
@@ -49,7 +52,7 @@ class ComClassMngController extends Controller
         if ($exists) {
             return response()->json(['success' => false, 'message' => 'This Class Already Exists.'], 409);
         }
-
+        $data['createdBy'] = $userId;
         $created = $this->comClassMngInterface->create($data);
         return response()->json($created, 201);
     }
@@ -85,6 +88,8 @@ class ComClassMngController extends Controller
         if ($exists) {
             return response()->json(['success' => false, 'message' => 'This Class Already Exists.'], 409);
         }
+        $userId = Auth::id();
+        $data['createdBy'] = $userId;
 
         $updated = $this->comClassMngInterface->update($id, $data);
         return response()->json(['success' => true, 'message' => 'Class updated successfully.', 'data' => $updated], 200);

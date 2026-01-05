@@ -8,6 +8,7 @@ use App\Http\Requests\ComAcademicYear\ComAcademicYearRequest;
 use App\Models\ComAcademicYears;
 use App\Repositories\All\ComAcademicYear\ComAcademicYearInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ComAcademicYearsController extends Controller
 {
@@ -27,9 +28,10 @@ class ComAcademicYearsController extends Controller
     public function store(ComAcademicYearRequest $request)
     {
         //
+        $user = Auth::user();
         $data = $request->validated();
         $year = isset($data['year']) ? (int) $data['year'] : null;
-
+        $userId = $user->id;
         if ($year === null) {
             return response()->json([
                 'success' => false,
@@ -49,8 +51,9 @@ class ComAcademicYearsController extends Controller
                 'message' => 'Year already exists.',
             ], 422);
         }
-        $data = $this->comAcademicYearInterface->create($data);
-        return response()->json($data, 200);
+        $data['createdBy'] = $userId;
+        $created = $this->comAcademicYearInterface->create($data);
+        return response()->json($created, 200);
     }
 
 
@@ -78,6 +81,8 @@ class ComAcademicYearsController extends Controller
 
         $academicYear = $this->comAcademicYearInterface->findById($id);
 
+        $userId = Auth::id();
+
         if ($data['isFinishedYear'] === true) {
             $status = 'Finished';
         } else {
@@ -85,7 +90,8 @@ class ComAcademicYearsController extends Controller
         }
 
         $academicYear->update([
-            'status' => $status
+            'status' => $status,
+            'createdBy' => $userId,
         ]);
 
         return response()->json([
