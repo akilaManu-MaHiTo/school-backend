@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use App\Notifications\EmailChangeOTPsend\SendOtpEmailChange;
 use App\Repositories\All\AssigneeLevel\AssigneeLevelInterface;
 use App\Repositories\All\ComParentProfile\ComParentProfileInterface;
@@ -113,33 +114,33 @@ class UserController extends Controller
         );
 
         // Sort by created_at on the model, then map
-                $userData['userProfile'] = $teacherProfiles
-                        ? $teacherProfiles
-				->sortByDesc('created_at')
-                ->map(function ($profile) {
-                    return [
-                        'id' => $profile->id,
-                        'academicYear' => $profile->academicYear,
-                        'academicMedium' => $profile->academicMedium,
-                        'grade' => $profile->grade ? [
-                            'id' => $profile->grade->id,
-                            'grade' => $profile->grade->grade,
-                        ] : null,
-                        'subject' => $profile->subject ? [
-                            'id' => $profile->subject->id,
-                            'subjectCode' => $profile->subject->subjectCode,
-                            'subjectName' => $profile->subject->subjectName,
-                        ] : null,
-                        'class' => $profile->class ? [
-                            'id' => $profile->class->id,
-                            'className' => $profile->class->className,
-                        ] : null,
-                        'createdAt' => $profile->created_at,
-                        'updatedAt' => $profile->updated_at,
-                    ];
-                })
-                ->values()
-                ->toArray()
+        $userData['userProfile'] = $teacherProfiles
+            ? $teacherProfiles
+            ->sortByDesc('created_at')
+            ->map(function ($profile) {
+                return [
+                    'id' => $profile->id,
+                    'academicYear' => $profile->academicYear,
+                    'academicMedium' => $profile->academicMedium,
+                    'grade' => $profile->grade ? [
+                        'id' => $profile->grade->id,
+                        'grade' => $profile->grade->grade,
+                    ] : null,
+                    'subject' => $profile->subject ? [
+                        'id' => $profile->subject->id,
+                        'subjectCode' => $profile->subject->subjectCode,
+                        'subjectName' => $profile->subject->subjectName,
+                    ] : null,
+                    'class' => $profile->class ? [
+                        'id' => $profile->class->id,
+                        'className' => $profile->class->className,
+                    ] : null,
+                    'createdAt' => $profile->created_at,
+                    'updatedAt' => $profile->updated_at,
+                ];
+            })
+            ->values()
+            ->toArray()
             : [];
         $studentProfile = $this->comStudentProfileInterface->getByColumn(
             ['studentId' => $user->id],
@@ -387,6 +388,71 @@ class UserController extends Controller
         }
 
         $user->name = $request->input('name', $user->name);
+        $user->mobile = $request->input('mobile', $user->mobile);
+        $user->gender = $request->input('gender', $user->gender);
+        $user->email = $request->input('email', $user->email);
+        $user->nameWithInitials = $request->input('nameWithInitials', $user->nameWithInitials);
+        $user->birthDate = $request->input('birthDate', $user->birthDate);
+        $user->address = $request->input('address', $user->address);
+        $user->profileImage = ! empty($newImages)
+            ? array_values($newImages)
+            : array_values($existingImages);
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user,
+        ], 200);
+    }
+
+    public function profileUpdateByAdmin(ProfileUpdateRequest $request, $id)
+    {
+        $user = $this->userInterface->getById($id);
+
+        if (! $user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $existingImages = is_array($user->profileImage)
+            ? $user->profileImage
+            : json_decode($user->profileImage, true) ?? [];
+
+        if ($request->filled('removeDoc')) {
+            foreach ($request->removeDoc as $removeDoc) {
+                $this->profileImageService->deleteImageFromGCS($removeDoc);
+                $existingImages = array_filter($existingImages, fn($img) => $img !== $removeDoc);
+            }
+        }
+
+        $existingImages = array_values($existingImages);
+
+        $newImages = [];
+        if ($request->hasFile('profileImage')) {
+            foreach ($request->file('profileImage') as $file) {
+                $uploadResult = $this->profileImageService->uploadImageToGCS($file);
+                if ($uploadResult && isset($uploadResult['gsutil_uri'])) {
+                    $newImages[] = $uploadResult['gsutil_uri'];
+                }
+            }
+        }
+
+        $employeeNumber = $request->input('employeeNumber', $user->employeeNumber);
+
+        if ($employeeNumber !== $user->employeeNumber) {
+            $exists = User::where('employeeNumber', $employeeNumber)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'message' => 'Admission/Staff Number is already exists.',
+                ], 422);
+            }
+        }
+
+        $user->name = $request->input('name', $user->name);
+        $user->employeeNumber = $employeeNumber;
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
         $user->email = $request->input('email', $user->email);

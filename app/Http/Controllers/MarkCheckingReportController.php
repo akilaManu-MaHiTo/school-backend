@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class MarkCheckingReportController extends Controller
 {
-    public function checkMarkTeacher(string $year, int $grade, string $examType, Request $request): JsonResponse
+    public function checkMarkTeacher(string $year, int $grade, string $examType, string $status, Request $request): JsonResponse
     {
         // Optional teacher search (username, email, full name, employeeId)
         $search = trim((string) $request->query('search', ''));
@@ -54,12 +54,19 @@ class MarkCheckingReportController extends Controller
                 continue;
             }
 
-            $year   = $profile->academicYear;
-            $gradeId = $profile->academicGradeId;
-            $classId = $profile->academicClassId;
-            $medium  = $profile->academicMedium;
+            $year      = $profile->academicYear;
+            $gradeId   = $profile->academicGradeId;
+            $classId   = $profile->academicClassId;
+            $medium    = $profile->academicMedium;
             $subjectId = $profile->academicSubjectId;
             $teacherId = $profile->teacherId;
+
+            $teacher           = $profile->teacher;
+            $teacherName       = $teacher->name;
+            $teacherEmail      = $teacher->email;
+            $teacherStaffId    = $teacher->employeeNumber ?? null;
+            $teacherMobile     = $teacher->mobile ?? null;
+            $nameWithInitials  = $teacher->nameWithInitials ?? null;
 
             // Find all students in this class/year/medium
             $studentProfiles = ComStudentProfile::query()
@@ -74,8 +81,11 @@ class MarkCheckingReportController extends Controller
                     $this->pushTeacherResult(
                         $results,
                         $teacherId,
-                        $profile->teacher->name,
-                        $profile->teacher->email,
+                        $teacherName,
+                        $teacherEmail,
+                        $teacherStaffId,
+                        $teacherMobile,
+                        $nameWithInitials,
                         $termLabel,
                         [
                             'academicYear'            => $year,
@@ -116,8 +126,11 @@ class MarkCheckingReportController extends Controller
                     $this->pushTeacherResult(
                         $results,
                         $teacherId,
-                        $profile->teacher->name,
-                        $profile->teacher->email,
+                        $teacherName,
+                        $teacherEmail,
+                        $teacherStaffId,
+                        $teacherMobile,
+                        $nameWithInitials,
                         $termLabel,
                         [
                             'academicYear'            => $year,
@@ -158,8 +171,11 @@ class MarkCheckingReportController extends Controller
                 $this->pushTeacherResult(
                     $results,
                     $teacherId,
-                    $profile->teacher->name,
-                    $profile->teacher->email,
+                    $teacherName,
+                    $teacherEmail,
+                    $teacherStaffId,
+                    $teacherMobile,
+                    $nameWithInitials,
                     $termLabel,
                     [
                         'academicYear'            => $year,
@@ -179,13 +195,74 @@ class MarkCheckingReportController extends Controller
             }
         }
 
+        // Apply status filter: All, Pending, Done
+        $status = strtoupper($status);
+
+        if ($status === 'PENDING') {
+            $filtered = [];
+
+            foreach ($results as $teacherRow) {
+                if (! isset($teacherRow['markChecking']) || ! is_array($teacherRow['markChecking'])) {
+                    continue;
+                }
+
+                $pendingMarkChecking = [];
+
+                foreach ($teacherRow['markChecking'] as $termLabel => $termRows) {
+                    $pendingRows = array_values(array_filter($termRows, function (array $row): bool {
+                        return ($row['pendingStudentsCount'] ?? 0) > 0;
+                    }));
+
+                    if (! empty($pendingRows)) {
+                        $pendingMarkChecking[$termLabel] = $pendingRows;
+                    }
+                }
+
+                if (! empty($pendingMarkChecking)) {
+                    $teacherRow['markChecking'] = $pendingMarkChecking;
+                    $filtered[]                 = $teacherRow;
+                }
+            }
+
+            $results = array_values($filtered);
+        } elseif ($status === 'DONE') {
+            $results = array_values(array_filter($results, function (array $teacherRow): bool {
+                if (! isset($teacherRow['markChecking']) || ! is_array($teacherRow['markChecking'])) {
+                    return false;
+                }
+
+                $hasAnyRow = false;
+
+                foreach ($teacherRow['markChecking'] as $termRows) {
+                    foreach ($termRows as $row) {
+                        $hasAnyRow = true;
+                        if (($row['pendingStudentsCount'] ?? 0) > 0) {
+                            return false;
+                        }
+                    }
+                }
+
+                return $hasAnyRow;
+            }));
+        }
+
         return response()->json($results, 200);
     }
 
     /**
      * Group results by teacher and term, and append class/subject mark-check entry.
      */
-    private function pushTeacherResult(array &$results, int $teacherId, string $teacherName, string $teacherEmail, string $termLabel, array $markCheckingRow): void
+    private function pushTeacherResult(
+        array &$results,
+        int $teacherId,
+        string $teacherName,
+        string $teacherEmail,
+        ?string $teacherStaffId,
+        ?string $teacherMobile,
+        ?string $nameWithInitials,
+        string $termLabel,
+        array $markCheckingRow
+    ): void
     {
         foreach ($results as &$teacherRow) {
             if (($teacherRow['teacherId'] ?? null) === $teacherId) {
@@ -199,9 +276,12 @@ class MarkCheckingReportController extends Controller
         }
 
         $results[] = [
-            'teacherId'    => $teacherId,
-            'teacherName'  => $teacherName,
-            'teacherEmail' => $teacherEmail,
+            'teacherId'         => $teacherId,
+            'teacherName'       => $teacherName,
+            'teacherEmail'      => $teacherEmail,
+            'teacherStaffId'    => $teacherStaffId,
+            'teacherMobile'     => $teacherMobile,
+            'nameWithInitials'  => $nameWithInitials,
             'markChecking' => [
                 $termLabel => [$markCheckingRow],
             ],
