@@ -268,6 +268,7 @@ class ComStudentProfileController extends Controller
                     'userName' => $profile->student->userName,
                     'name'  => $profile->student->name,
                     'email' => $profile->student->email,
+                    'nameWithInitials' => $profile->student->nameWithInitials,
                 ] : null,
                 'grade'             => $profile->grade ? [
                     'id'    => $profile->grade->id,
