@@ -479,8 +479,9 @@ class ClassReportController extends Controller
 
             $markData[] = [
                 'userName'         => $student?->userName,
+                'admissionNumber'      => $student->employeeNumber,
                 'email'            => $student?->email,
-                'nameWithInitials' => $student?->name,
+                'nameWithInitials' => $student?->nameWithInitials,
                 'marks'            => [$marksObject],
                 'averageOfMarks'   => $average,
                 'position'         => null,

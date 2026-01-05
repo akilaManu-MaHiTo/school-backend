@@ -111,29 +111,35 @@ class UserController extends Controller
             ['*'],
             ['grade', 'subject', 'class']
         );
-        $userData['userProfile'] = $teacherProfiles
-            ? $teacherProfiles->map(function ($profile) {
-                return [
-                    'id' => $profile->id,
-                    'academicYear' => $profile->academicYear,
-                    'academicMedium' => $profile->academicMedium,
-                    'grade' => $profile->grade ? [
-                        'id' => $profile->grade->id,
-                        'grade' => $profile->grade->grade,
-                    ] : null,
-                    'subject' => $profile->subject ? [
-                        'id' => $profile->subject->id,
-                        'subjectCode' => $profile->subject->subjectCode,
-                        'subjectName' => $profile->subject->subjectName,
-                    ] : null,
-                    'class' => $profile->class ? [
-                        'id' => $profile->class->id,
-                        'className' => $profile->class->className,
-                    ] : null,
-                    'createdAt' => $profile->created_at,
-                    'updatedAt' => $profile->updated_at,
-                ];
-            })->values()->toArray()
+
+        // Sort by created_at on the model, then map
+                $userData['userProfile'] = $teacherProfiles
+                        ? $teacherProfiles
+				->sortByDesc('created_at')
+                ->map(function ($profile) {
+                    return [
+                        'id' => $profile->id,
+                        'academicYear' => $profile->academicYear,
+                        'academicMedium' => $profile->academicMedium,
+                        'grade' => $profile->grade ? [
+                            'id' => $profile->grade->id,
+                            'grade' => $profile->grade->grade,
+                        ] : null,
+                        'subject' => $profile->subject ? [
+                            'id' => $profile->subject->id,
+                            'subjectCode' => $profile->subject->subjectCode,
+                            'subjectName' => $profile->subject->subjectName,
+                        ] : null,
+                        'class' => $profile->class ? [
+                            'id' => $profile->class->id,
+                            'className' => $profile->class->className,
+                        ] : null,
+                        'createdAt' => $profile->created_at,
+                        'updatedAt' => $profile->updated_at,
+                    ];
+                })
+                ->values()
+                ->toArray()
             : [];
         $studentProfile = $this->comStudentProfileInterface->getByColumn(
             ['studentId' => $user->id],
