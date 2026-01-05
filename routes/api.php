@@ -140,6 +140,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users', [AdminController::class, 'index']);
     Route::post('users/{id}/update', [AdminController::class, 'update']);
     Route::get('users-assignee-level', [AdminController::class, 'assigneeLevel']);
+
+    Route::post('user/{id}/profile-update-by-admin', [UserController::class, 'profileUpdateByAdmin']);
+
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -318,13 +321,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
+    Route::get('class-report/{year}/{grade}/{class}/{examType}/mark-grades-table', [ClassReportController::class, 'getMarksGradeTable']);
+
     Route::get('class-report/{year}/{grade}/{class}/{examType}/{markGrade}/bar-chart', [ClassReportController::class, 'getClassBarChartByMarkGrade']);
     Route::get('class-report/{year}/{grade}/{class}/All/{markGrade}/all-bar-chart', [ClassReportController::class, 'getClassAllBarChartByMarkGrade']);
 
     Route::get('class-report/{year}/{grade}/{class}/All/all-report-card', [ClassReportController::class, 'getClassAllReportCard']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
+    Route::get('class-report/{year}/{grade}/{class}/All/all-mark-grades-table', [ClassReportController::class, 'getAllMarksGradeTable']);
 
-    Route::get('mark-check/{year}/{grade}/{examType}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
+
+    Route::get('mark-check/{year}/{grade}/{examType}/{status}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
 
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);

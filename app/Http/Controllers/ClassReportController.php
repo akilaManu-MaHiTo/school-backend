@@ -371,6 +371,164 @@ class ClassReportController extends Controller
     }
 
     /**
+     * Return table data for a given term showing, per subject,
+     * how many students obtained each mark grade (A, B, C, S, F).
+     *
+     * Example row:
+     * [
+     *   'subjectId'   => 1,
+     *   'subjectName' => 'Mathematics',
+     *   'A'           => 10,
+     *   'B'           => 5,
+     *   'C'           => 3,
+     *   'S'           => 1,
+     *   'F'           => 0,
+     * ]
+     */
+    public function getMarksGradeTable(string $year, int $gradeId, int $classId, string $examType): JsonResponse
+    {
+        $studentProfileIds = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->pluck('id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return response()->json();
+        }
+
+        $grades = ['A', 'B', 'C', 'S', 'F'];
+
+        $rows = StudentMarks::query()
+            ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
+            ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+            ->where('student_marks.academicYear', $year)
+            ->where('student_marks.academicTerm', $examType)
+            ->where('student_marks.isAbsentStudent', false)
+            ->whereNotNull('student_marks.studentMark')
+            ->whereNotNull('student_marks.markGrade')
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, student_marks.markGrade as markGrade, COUNT(*) as gradeCount')
+            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'student_marks.markGrade')
+            ->get();
+
+        $grouped = $rows->groupBy('subjectId');
+
+        $data = $grouped->map(function (Collection $items) use ($grades) {
+            $first = $items->first();
+
+            $gradeCounts = [];
+            foreach ($items as $item) {
+                $grade                       = strtoupper((string) $item->markGrade);
+                $gradeCounts[$grade] = (int) $item->gradeCount;
+            }
+
+            $row = [
+                'subjectId'   => $first->subjectId,
+                'subjectName' => $first->subjectName,
+            ];
+
+            foreach ($grades as $grade) {
+                $row[$grade] = $gradeCounts[$grade] ?? 0;
+            }
+
+            return $row;
+        })->values();
+
+        return response()->json(
+            $data,
+        );
+    }
+
+    /**
+     * Return table data for all standard terms (Term 1, Term 2, Term 3)
+     * showing, per subject and per term, the count of students in each
+     * mark grade (A, B, C, S, F).
+     *
+     * Example response structure:
+     * [
+     *   'term1' => [ ...subject rows... ],
+     *   'term2' => [ ...subject rows... ],
+     *   'term3' => [ ...subject rows... ],
+     * ]
+     */
+    public function getAllMarksGradeTable(string $year, int $gradeId, int $classId): JsonResponse
+    {
+        $studentProfileIds = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->pluck('id');
+
+        if ($studentProfileIds->isEmpty()) {
+            return response()->json(
+                [
+                    'term1' => [],
+                    'term2' => [],
+                    'term3' => [],
+                ],
+            );
+        }
+
+        $grades = ['A', 'B', 'C', 'S', 'F'];
+
+        $terms = [
+            'Term 1' => 'term1',
+            'Term 2' => 'term2',
+            'Term 3' => 'term3',
+        ];
+
+        $result = [];
+
+        foreach ($terms as $termLabel => $key) {
+            $rows = StudentMarks::query()
+                ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
+                ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+                ->where('student_marks.academicYear', $year)
+                ->where('student_marks.academicTerm', $termLabel)
+                ->where('student_marks.isAbsentStudent', false)
+                ->whereNotNull('student_marks.studentMark')
+                ->whereNotNull('student_marks.markGrade')
+                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, student_marks.markGrade as markGrade, COUNT(*) as gradeCount')
+                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'student_marks.markGrade')
+                ->get();
+
+            if ($rows->isEmpty()) {
+                $result[$key] = [];
+                continue;
+            }
+
+            $grouped = $rows->groupBy('subjectId');
+
+            $termData = $grouped->map(function (Collection $items) use ($grades) {
+                $first = $items->first();
+
+                $gradeCounts = [];
+                foreach ($items as $item) {
+                    $grade                       = strtoupper((string) $item->markGrade);
+                    $gradeCounts[$grade] = (int) $item->gradeCount;
+                }
+
+                $row = [
+                    'subjectId'   => $first->subjectId,
+                    'subjectName' => $first->subjectName,
+                ];
+
+                foreach ($grades as $grade) {
+                    $row[$grade] = $gradeCounts[$grade] ?? 0;
+                }
+
+                return $row;
+            })->values();
+
+            $result[$key] = $termData;
+        }
+
+        return response()->json(
+            $result,
+        );
+    }
+
+    /**
      * @return Collection<int, ComStudentProfile>
      */
     private function getStudentProfiles(string $year, int $gradeId, int $classId): Collection
