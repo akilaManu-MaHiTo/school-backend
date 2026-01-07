@@ -142,7 +142,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users-assignee-level', [AdminController::class, 'assigneeLevel']);
 
     Route::post('user/{id}/profile-update-by-admin', [UserController::class, 'profileUpdateByAdmin']);
-
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -290,7 +289,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-subject/{year}/{grade}/{class}/{medium}/subject', [ComTeacherProfileController::class, 'getTeacherSubject']);
 
     Route::post('teacher-profiles/admin/{id}', [ComTeacherProfileController::class, 'updateByAdmin']);
-
+    Route::post('teacher-profiles-create/admin/{id}', [ComTeacherProfileController::class, 'createByAdmin']);
 
 
 
@@ -303,6 +302,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-profiles/{gradeId}/{classId}/{year}/{medium}/{subjectId}/{term}/marks', [ComStudentProfileController::class, 'getStudentMarks']);
 
     Route::post('student-profiles/admin/{id}', [ComStudentProfileController::class, 'updateByAdmin']);
+    Route::post('student-profiles-create/admin/{id}', [ComStudentProfileController::class, 'createByAdmin']);
+
 
     // Parent profiles
     Route::get('parent-profiles', [ComParentProfileController::class, 'index']);
@@ -310,6 +311,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('parent-profiles/{id}', [ComParentProfileController::class, 'show']);
     Route::post('parent-profiles/{id}', [ComParentProfileController::class, 'update']);
     Route::delete('parent-profiles/{id}', [ComParentProfileController::class, 'destroy']);
+    Route::post('parent-profiles-by-admin', [ComParentProfileController::class, 'parentProfileCreateByAdmin']);
 
 
     // Student marks
