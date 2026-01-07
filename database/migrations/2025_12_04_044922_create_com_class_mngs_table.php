@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('com_class_mngs', function (Blueprint $table) {
             $table->id();
             $table->string('className')->unique();
+            $table->unsignedBigInteger('createdBy')->required();
             $table->timestamps();
+
+            $table->foreign('createdBy')->references('id')->on('users')->onDelete('restrict');
         });
     }
 

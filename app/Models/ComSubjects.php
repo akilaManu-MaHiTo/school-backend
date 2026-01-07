@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class ComSubjects extends Model
 {
@@ -16,6 +17,19 @@ class ComSubjects extends Model
         'subjectName',
         'subjectMedium',
         'isBasketSubject',
-        'basketGroup'
+        'basketGroup',
+        'createdBy',
     ];
+
+    protected $appends = ['createdByData'];
+
+    public function createdByUser()
+    {
+        return $this->belongsTo(User::class, 'createdBy');
+    }
+
+    public function getCreatedByDataAttribute()
+    {
+        return $this->createdByUser;
+    }
 }

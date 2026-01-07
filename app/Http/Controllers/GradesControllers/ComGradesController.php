@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ComGrades\ComGradesRequest;
 use App\Models\ComGrades;
 use App\Repositories\All\ComGrades\ComGradesInterface;
+use Illuminate\Support\Facades\Auth;
 
 class ComGradesController extends Controller
 {
@@ -25,6 +26,8 @@ class ComGradesController extends Controller
 
     public function store(ComGradesRequest $request)
     {
+        $user = Auth::user();
+        $userId = $user->id;
         $data = $request->validated();
         $grade = isset($data['grade']) ? (int) $data['grade'] : null;
 
@@ -62,6 +65,7 @@ class ComGradesController extends Controller
                 'message' => 'This Grade Already Exists.'
             ], 409);
         }
+        $data['createdBy'] = $userId;
         $created = $this->comGradesInterface->create($data);
         return response()->json($created, 201);
     }
@@ -99,6 +103,8 @@ class ComGradesController extends Controller
                 'message' => 'This Grade Already Exists.'
             ], 409);
         }
+        $userId = Auth::id();
+        $data['createdBy'] = $userId;
 
         $updated = $this->comGradesInterface->update($id, $data);
         return response()->json([
