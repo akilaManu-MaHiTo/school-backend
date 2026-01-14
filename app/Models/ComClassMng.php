@@ -14,6 +14,7 @@ class ComClassMng extends Model
     protected $table = 'com_class_mngs';
     protected $fillable = [
         'className',
+        'classCategory',
         'createdBy',
     ];
 

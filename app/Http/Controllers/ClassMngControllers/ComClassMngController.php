@@ -29,6 +29,37 @@ class ComClassMngController extends Controller
     }
 
     /**
+     * Get classes by grade range mapped to classCategory.
+     *
+     * 1-5   => Primary Class
+     * 6-11  => Secondary Class
+     * 12-13 => Tertiary Class
+     */
+    public function getClassesByGrade(int $grade)
+    {
+        if ($grade >= 1 && $grade <= 5) {
+            $category = '1 - 5 Class';
+        } elseif ($grade >= 6 && $grade <= 9) {
+            $category = '6 - 9 Class';
+        } elseif ($grade >= 10 && $grade <= 11) {
+            $category = '10 - 11 Class';
+        } elseif ($grade >= 12 && $grade <= 13) {
+            $category = '12 - 13 Class';
+        } else {
+            return response()->json([], 400);
+        }
+
+        $classes = ComClassMng::where('classCategory', $category)
+            ->orderBy('className')
+            ->get(['id', 'className']);
+
+        return response()->json(
+            $classes,
+            200
+        );
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(ComClassMngRequest $request)

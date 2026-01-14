@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('com_class_mngs', function (Blueprint $table) {
             $table->id();
             $table->string('className')->unique();
+            $table->string('classCategory')->required();
             $table->unsignedBigInteger('createdBy')->required();
             $table->timestamps();
 

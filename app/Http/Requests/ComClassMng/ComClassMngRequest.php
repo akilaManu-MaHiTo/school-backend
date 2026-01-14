@@ -23,6 +23,7 @@ class ComClassMngRequest extends FormRequest
     {
         return [
             'className' => 'required|string|max:255',
+            'classCategory' => 'required|string|max:255',
         ];
     }
 }

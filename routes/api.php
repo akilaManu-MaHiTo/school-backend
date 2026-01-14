@@ -273,8 +273,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('class', [ComClassMngController::class, 'store']);
     Route::get('class', [ComClassMngController::class, 'index']);
     Route::get('class/{id}', [ComClassMngController::class, 'show']);
+    Route::get('class-by-grade/{gradeId}', [ComClassMngController::class, 'getClassesByGrade']);
     Route::post('class/{id}', [ComClassMngController::class, 'update']);
     Route::delete('class/{id}', [ComClassMngController::class, 'destroy']);
+
 
     // Teacher profiles
     Route::get('teacher-profiles', [ComTeacherProfileController::class, 'index']);
