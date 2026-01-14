@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('subjectCode')->nullable();
             $table->string('subjectMedium')->required();
             $table->string('subjectName')->required();
+            $table->string('colorCode')->required();
             $table->boolean('isBasketSubject');
             $table->enum('basketGroup', ['Group 1', 'Group 2', 'Group 3'])->nullable();
             $table->unsignedBigInteger('createdBy')->nullable();

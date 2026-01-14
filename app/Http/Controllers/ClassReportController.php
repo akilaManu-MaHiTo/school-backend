@@ -35,8 +35,8 @@ class ClassReportController extends Controller
             ->where('student_marks.academicTerm', $examType)
             ->where('student_marks.isAbsentStudent', false)
             ->whereNotNull('student_marks.studentMark')
-            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, SUM(student_marks.studentMark) as totalMarks, COUNT(*) as studentCount')
-            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.colorCode as colorCode, SUM(student_marks.studentMark) as totalMarks, COUNT(*) as studentCount')
+            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'com_subjects.colorCode')
             ->get();
 
         $data = $rows->map(function ($row) {
@@ -46,6 +46,7 @@ class ClassReportController extends Controller
             return [
                 'subjectName'  => $row->subjectName,
                 'totalMarks'   => $totalMarks,
+                'subjectColorCode' => $row->colorCode,
                 'average'      => $studentCount > 0 ? $totalMarks / $studentCount : 0.0,
                 'studentCount' => $studentCount,
             ];
@@ -85,8 +86,8 @@ class ClassReportController extends Controller
             ->whereIn('student_marks.studentProfileId', $studentProfileIds)
             ->where('student_marks.academicYear', $year)
             ->where('student_marks.academicTerm', $examType)
-            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName')
-            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.colorCode as colorCode')
+            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'com_subjects.colorCode')
             ->get();
 
         // Aggregate counts per subject for the given term and mark grade
@@ -106,8 +107,9 @@ class ClassReportController extends Controller
             $count = isset($counts[$subjectId]) ? (int) $counts[$subjectId] : 0;
 
             return [
-                'subjectName' => $subject->subjectName,
-                'count'       => $count,
+                'subjectName'       => $subject->subjectName,
+                'subjectColorCode'  => $subject->colorCode,
+                'count'             => $count,
             ];
         })->values();
 
@@ -157,8 +159,8 @@ class ClassReportController extends Controller
                 ->whereIn('student_marks.studentProfileId', $studentProfileIds)
                 ->where('student_marks.academicYear', $year)
                 ->where('student_marks.academicTerm', $termLabel)
-                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName')
-                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.colorCode as colorCode')
+                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'com_subjects.colorCode')
                 ->get();
 
             if ($subjects->isEmpty()) {
@@ -183,8 +185,9 @@ class ClassReportController extends Controller
                 $count = isset($counts[$subjectId]) ? (int) $counts[$subjectId] : 0;
 
                 return [
-                    'subjectName' => $subject->subjectName,
-                    'count'       => $count,
+                    'subjectName'      => $subject->subjectName,
+                    'subjectColorCode' => $subject->colorCode,
+                    'count'            => $count,
                 ];
             })->values();
 
@@ -236,8 +239,8 @@ class ClassReportController extends Controller
                 ->where('student_marks.academicTerm', $termLabel)
                 ->where('student_marks.isAbsentStudent', false)
                 ->whereNotNull('student_marks.studentMark')
-                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, SUM(student_marks.studentMark) as totalMarks, COUNT(*) as studentCount')
-                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName')
+                ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.colorCode as colorCode, SUM(student_marks.studentMark) as totalMarks, COUNT(*) as studentCount')
+                ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'com_subjects.colorCode')
                 ->get();
 
             $data = $rows->map(function ($row) {
@@ -245,10 +248,11 @@ class ClassReportController extends Controller
                 $studentCount = (int) $row->studentCount;
 
                 return [
-                    'subjectName'  => $row->subjectName,
-                    'totalMarks'   => $totalMarks,
-                    'average'      => $studentCount > 0 ? $totalMarks / $studentCount : 0.0,
-                    'studentCount' => $studentCount,
+                    'subjectName'       => $row->subjectName,
+                    'subjectColorCode'  => $row->colorCode,
+                    'totalMarks'        => $totalMarks,
+                    'average'           => $studentCount > 0 ? $totalMarks / $studentCount : 0.0,
+                    'studentCount'      => $studentCount,
                 ];
             })->values();
 

@@ -77,6 +77,14 @@ class ComSubjectsController extends Controller
         $userId = $user->id;
         $subjectName = $data['subjectName'] ?? null;
         $subjectCode = $data['subjectCode'] ?? null;
+        $colorCode = $data['colorCode'] ?? null;
+
+        if ($colorCode === null || trim($colorCode) === '' || $colorCode === '#fff') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Color code is required.'
+            ], 422);
+        }
 
         $isBasketSubject = $data['isBasketSubject'] ?? null;
         if ($isBasketSubject && (!isset($data['basketGroup']) || $data['basketGroup'] === null)) {
