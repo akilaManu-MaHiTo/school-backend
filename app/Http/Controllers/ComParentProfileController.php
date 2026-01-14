@@ -41,6 +41,26 @@ class ComParentProfileController extends Controller
         return response()->json($created, 201);
     }
 
+    public function parentProfileCreateByAdmin(ComParentProfileStoreRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $data = $request->validated();
+        $userId = $data['parentId'];
+        if ($this->parentProfileInterface->isDuplicate($userId, $data['studentId'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This parent is already linked to this student profile.',
+            ], 409);
+        }
+
+        $created = $this->parentProfileInterface->create($data);
+
+        return response()->json($created, 201);
+    }
+
     public function show(int $id): JsonResponse
     {
         $item = $this->parentProfileInterface->getById($id);

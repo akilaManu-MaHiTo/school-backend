@@ -73,8 +73,8 @@ class ComSubjectsController extends Controller
     public function store(ComSubjectsRequest $request)
     {
         $data = $request->validated();
-$user = Auth::user();
-$userId = $user->id;
+        $user = Auth::user();
+        $userId = $user->id;
         $subjectName = $data['subjectName'] ?? null;
         $subjectCode = $data['subjectCode'] ?? null;
 
@@ -105,12 +105,14 @@ $userId = $user->id;
         }
 
 
-        $codeExists = ComSubjects::where('subjectCode', $subjectCode)->exists();
-        if ($codeExists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject code already exists.'
-            ], 422);
+        if (!is_null($subjectCode) && trim($subjectCode) !== '') {
+            $codeExists = ComSubjects::where('subjectCode', $subjectCode)->exists();
+            if ($codeExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject code already exists.'
+                ], 422);
+            }
         }
         $data['createdBy'] = $userId;
         $subject = $this->comSubjectsInterface->create($data);
@@ -176,16 +178,18 @@ $userId = $user->id;
             ], 422);
         }
 
-        // Check for duplicate code
-        $codeExists = ComSubjects::where('subjectCode', $newCode)
-            ->where('id', '!=', $subject->id)
-            ->exists();
+        // Check for duplicate code only when a non-empty code is provided
+        if (!is_null($newCode) && trim($newCode) !== '') {
+            $codeExists = ComSubjects::where('subjectCode', $newCode)
+                ->where('id', '!=', $subject->id)
+                ->exists();
 
-        if ($codeExists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subject code already exists.'
-            ], 422);
+            if ($codeExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subject code already exists.'
+                ], 422);
+            }
         }
         $userId = Auth::id();
         $data['createdBy'] = $userId;

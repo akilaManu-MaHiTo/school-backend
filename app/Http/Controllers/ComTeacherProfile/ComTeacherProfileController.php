@@ -361,6 +361,45 @@ class ComTeacherProfileController extends Controller
         return response()->json($subjects, 200);
     }
 
+    public function createByAdmin(ComTeacherProfileRequest $request, int $id): JsonResponse
+    {
+        Log::info('TeacherProfile.store: Incoming request', [
+            'payload' => $request->all()
+        ]);
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $userId = $user->id;
+        $userType = $user->employeeType;
+
+        $data = $request->validated();
+        $data['createdByUser'] = $userId;
+        $data['teacherId'] = $id;
+
+        if ($this->teacherProfileInterface->isDuplicate($data)) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher Academic Details Already Exists',
+            ], 409);
+        }
+
+        try {
+            $profile = $this->teacherProfileInterface->create($data);
+            return response()->json([
+                'success' => true,
+                'message' => 'Teacher profile created successfully.',
+                'data'    => $this->formatProfile($profile),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong while creating the teacher profile.',
+            ], 500);
+        }
+    }
+
     public function updateByAdmin(ComTeacherProfileRequest $request, int $id): JsonResponse
     {
         try {
@@ -380,7 +419,6 @@ class ComTeacherProfileController extends Controller
         }
         $data = $request->validated();
         $data['createdByUser'] = $id;
-        $data['teacherId'] = $id;
 
 
         if ($this->teacherProfileInterface->isDuplicate($data, $id)) {

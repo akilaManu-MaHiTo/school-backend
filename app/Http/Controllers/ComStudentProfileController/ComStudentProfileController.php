@@ -299,6 +299,59 @@ class ComStudentProfileController extends Controller
         );
     }
 
+    public function createByAdmin(ComStudentProfileRequest $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validated();
+        $data['studentId'] = $id;
+        $basketSubjectArray = array_map('intval', $data['basketSubjectsIds'] ?? []);
+        $data['basketSubjectsIds'] = $basketSubjectArray;
+
+        if (! empty($basketSubjectArray)) {
+            $existingSubjects = ComSubjects::query()
+                ->whereIn('id', $basketSubjectArray)
+                ->pluck('id')
+                ->all();
+
+            $missingSubjects = array_values(array_diff($basketSubjectArray, $existingSubjects));
+
+            if (! empty($missingSubjects)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more basket subjects do not exist.',
+                    'invalidSubjectIds' => $missingSubjects,
+                ], 422);
+            }
+        }
+        if ($this->studentProfileInterface->isDuplicate($data)) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Student Assigned ALready to this Class',
+            ], 409);
+        }
+        try {
+            $profile = $this->studentProfileInterface->create($data);
+        } catch (\Throwable $throwable) {
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create student profile.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student profile created successfully.',
+            'data'    => $this->formatProfile($profile),
+        ], 201);
+    }
+
     public function updateByAdmin(ComStudentProfileRequest $request, int $id): JsonResponse
     {
         try {
