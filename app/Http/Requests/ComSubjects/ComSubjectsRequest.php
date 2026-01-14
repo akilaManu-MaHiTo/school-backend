@@ -25,6 +25,7 @@ class ComSubjectsRequest extends FormRequest
             //
             'subjectCode' => 'nullable|string',
             'subjectName' => 'required|string',
+            'colorCode' => 'required|string',
             'isBasketSubject' => 'required|boolean',
             'subjectMedium' => 'required|string',
             'basketGroup' => 'nullable|in:Group 1,Group 2,Group 3',
