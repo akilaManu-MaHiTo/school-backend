@@ -108,6 +108,7 @@ use App\Http\Controllers\MarkCheckingReportController;
 use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
+use App\Http\Controllers\GradeReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -305,7 +306,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('student-profiles/admin/{id}', [ComStudentProfileController::class, 'updateByAdmin']);
     Route::post('student-profiles-create/admin/{id}', [ComStudentProfileController::class, 'createByAdmin']);
-
+    Route::get('student-profiles/{year}/{gradeId}/{classId}', [ComStudentProfileController::class, 'getStudentToPromote']);
+    Route::post('student-promote', [ComStudentProfileController::class, 'studentPromote']);
 
     // Parent profiles
     Route::get('parent-profiles', [ComParentProfileController::class, 'index']);
@@ -334,7 +336,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-mark-grades-table', [ClassReportController::class, 'getAllMarksGradeTable']);
 
-
+    Route::get('grade-report/{year}/{grade}/{examType}/bar-chart', [GradeReportController::class, 'getGradeReportBarChart']);
+    Route::get('grade-report/{year}/{grade}/{examType}/{gradeMark}/bar-chart', [GradeReportController::class, 'getGradeReportGradeMArkCountBarChart']);
     Route::get('mark-check/{year}/{grade}/{examType}/{status}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
 
     //update user Active status

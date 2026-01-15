@@ -11,8 +11,11 @@ use App\Repositories\All\ComStudentProfile\ComStudentProfileInterface;
 use App\Traits\HandlesBasketSubjects;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Collection;
 
 class ComStudentProfileController extends Controller
@@ -105,6 +108,97 @@ class ComStudentProfileController extends Controller
         return response()->json($this->formatProfile($profile), 200);
     }
 
+    public function getStudentToPromote(string $year, int $gradeId, int $classId): JsonResponse
+    {
+        $profiles = ComStudentProfile::query()
+            ->with(['student', 'grade', 'class'])
+            ->where('academicYear', $year)
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->get();
+
+        if ($profiles->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $payload = $profiles
+            ->map(fn(ComStudentProfile $profile) => $this->formatProfile($profile))
+            ->values();
+
+        return response()->json($payload, 200);
+    }
+
+    public function studentPromote(Request $request): JsonResponse
+    {
+        $validator = Validator::make(
+            ['students' => $request->all()],
+            [
+                'students'                       => ['required', 'array', 'min:1'],
+                'students.*.studentId'           => ['required', 'integer', 'exists:users,id'],
+                'students.*.academicGradeId'     => ['required', 'integer', 'exists:com_grades,id'],
+                'students.*.academicClassId'     => ['required', 'integer', 'exists:com_class_mngs,id'],
+                'students.*.academicYear'        => ['required', 'string', 'max:255'],
+                'students.*.academicMedium'      => ['required', 'string', 'max:255'],
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed for one or more students.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $students = $validator->validated()['students'];
+
+        DB::beginTransaction();
+
+        try {
+            $createdProfiles = [];
+
+            foreach ($students as $studentData) {
+                $basketSubjectArray = array_map('intval', $studentData['basketSubjectsIds'] ?? []);
+                $studentData['basketSubjectsIds'] = $basketSubjectArray;
+
+
+
+                if ($this->studentProfileInterface->isDuplicate($studentData)) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Student Assigned ALready to this Class',
+                    ], 409);
+                }
+
+                $profile = $this->studentProfileInterface->create($studentData);
+                $createdProfiles[] = $this->formatProfile($profile);
+            }
+
+            DB::commit();
+        } catch (\Throwable $throwable) {
+            DB::rollBack();
+
+            Log::error('Failed to promote students', [
+                'error'   => $throwable->getMessage(),
+                'trace'   => $throwable->getTraceAsString(),
+                'payload' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to promote students.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Students promoted successfully.',
+            'data'    => $createdProfiles,
+        ], 201);
+    }
+
     public function update(ComStudentProfileRequest $request, int $id): JsonResponse
     {
         try {
@@ -187,9 +281,11 @@ class ComStudentProfileController extends Controller
         return [
             'id'             => $profile->id,
             'student'        => $profile->student ? [
-                'id'    => $profile->student->id,
+                'studentId'    => $profile->student->id,
                 'name'  => $profile->student->name,
                 'email' => $profile->student->email,
+                'admissionNumber' => $profile->student->employeeNumber,
+                'nameWithInitials' => $profile->student->nameWithInitials,
             ] : null,
             'grade'          => $profile->grade ? [
                 'id'    => $profile->grade->id,
