@@ -116,6 +116,7 @@ Route::post('calculate', [CalculationController::class, 'store']);
 Route::post('register', [RegisteredUserController::class, 'store']);
 
 Route::get('all-users', [UserController::class, 'index']);
+Route::get('student-users', [UserController::class, 'getStudents']);
 Route::get('users/search', [UserController::class, 'search']);
 
 Route::get('users/{userRole}/{sortBy}/search', [UserController::class, 'userTypeSearch']);
@@ -251,6 +252,8 @@ Route::get('supplier-type', [OhMiPiMiSupplierTypeController::class, 'index']);
 Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Grades
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
     Route::post('grade/{gradeId}', [ComGradesController::class, 'update']);
