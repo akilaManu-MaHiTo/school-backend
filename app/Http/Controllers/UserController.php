@@ -857,4 +857,9 @@ class UserController extends Controller
 
         return response()->json($userData, 200);
     }
+
+    public function getStudents(Request $request)
+    {
+        return $this->userTypeSearch($request, 'Student', 'user_id_desc');
+    }
 }

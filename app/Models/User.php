@@ -62,4 +62,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(ComStudentProfile::class, 'studentId', 'id');
     }
+
+    public function studentProfiles()
+    {
+        return $this->hasMany(ComStudentProfile::class, 'studentId', 'id');
+    }
 }

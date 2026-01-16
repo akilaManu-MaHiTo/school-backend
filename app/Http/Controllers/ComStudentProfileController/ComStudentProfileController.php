@@ -501,4 +501,66 @@ class ComStudentProfileController extends Controller
             'data'    => $this->formatProfile($profile),
         ]);
     }
+
+    public function getChildrenYears(int $studentId): JsonResponse
+    {
+        $years = ComStudentProfile::query()
+            ->where('studentId', $studentId)
+            ->orderBy('academicYear')
+            ->pluck('academicYear')
+            ->unique()
+            ->values();
+
+        return response()->json($years, 200);
+    }
+
+    public function getChildrenGrades(int $studentId): JsonResponse
+    {
+        $profiles = ComStudentProfile::query()
+            ->with('grade')
+            ->where('studentId', $studentId)
+            ->get();
+
+        $grades = $profiles
+            ->map(function (ComStudentProfile $profile) {
+                if (! $profile->grade) {
+                    return null;
+                }
+
+                return [
+                    'id'    => $profile->grade->id,
+                    'grade' => $profile->grade->grade,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($grades, 200);
+    }
+
+    public function getChildrenClasses(int $studentId): JsonResponse
+    {
+        $profiles = ComStudentProfile::query()
+            ->with('class')
+            ->where('studentId', $studentId)
+            ->get();
+
+        $classes = $profiles
+            ->map(function (ComStudentProfile $profile) {
+                if (! $profile->class) {
+                    return null;
+                }
+
+                return [
+                    'id'        => $profile->class->id,
+                    'className' => $profile->class->className,
+                ];
+            })
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        return response()->json($classes, 200);
+    }
 }

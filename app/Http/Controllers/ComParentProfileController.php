@@ -116,4 +116,75 @@ class ComParentProfileController extends Controller
             'message' => 'Parent profile deleted successfully.',
         ], 200);
     }
+
+    public function getMyChildren(int $parentId): JsonResponse
+    {
+        $parentProfiles = $this->parentProfileInterface->getByColumn(
+            ['parentId' => $parentId],
+            ['*'],
+            ['student.studentProfiles.grade', 'student.studentProfiles.class']
+        );
+
+        if (! $parentProfiles || $parentProfiles->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $children = $parentProfiles
+            ->map(function ($parentProfile) {
+                $student = $parentProfile->student;
+
+                if (! $student) {
+                    return null;
+                }
+
+                return [
+                    'id'                => $student->id,
+                    'name'              => $student->name,
+                    'userName'          => $student->userName,
+                    'nameWithInitials'  => $student->nameWithInitials,
+                    'email'             => $student->email,
+                    'employeeType'      => $student->employeeType,
+                    'employeeNumber'    => $student->employeeNumber,
+                    'mobile'            => $student->mobile,
+                    'emailVerifiedAt'   => $student->emailVerifiedAt,
+                    'userType'          => $student->userType,
+                    'assigneeLevel'     => $student->assigneeLevel,
+                    'profileImage'      => $student->profileImage,
+                    'availability'      => $student->availability,
+                    'gender'            => $student->gender,
+                    'birthDate'         => $student->birthDate,
+                    'address'           => $student->address,
+                    'student_profiles'  => $student->studentProfiles
+                        ->map(function ($profile) {
+                            $grade = $profile->grade;
+                            $class = $profile->class;
+
+                            return [
+                                'id'                 => $profile->id,
+                                'studentId'          => $profile->studentId,
+                                'academicGradeId'    => $profile->academicGradeId,
+                                'academicClassId'    => $profile->academicClassId,
+                                'academicYear'       => $profile->academicYear,
+                                'academicMedium'     => $profile->academicMedium,
+                                'basketSubjectsIds'  => $profile->basketSubjectsIds,
+                                'isStudentApproved'  => $profile->isStudentApproved,
+                                'grade'              => $grade ? [
+                                    'id'         => $grade->id,
+                                    'grade'      => $grade->grade,
+                                ] : null,
+                                'class'              => $class ? [
+                                    'id'           => $class->id,
+                                    'className'    => $class->className,
+                                    'classCategory'=> $class->classCategory,
+                                ] : null,
+                            ];
+                        })
+                        ->values(),
+                ];
+            })
+            ->filter()
+            ->values();
+
+        return response()->json($children, 200);
+    }
 }

@@ -109,12 +109,14 @@ use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
 use App\Http\Controllers\GradeReportController;
+use App\Http\Controllers\ParentReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
 Route::post('register', [RegisteredUserController::class, 'store']);
 
 Route::get('all-users', [UserController::class, 'index']);
+Route::get('student-users', [UserController::class, 'getStudents']);
 Route::get('users/search', [UserController::class, 'search']);
 
 Route::get('users/{userRole}/{sortBy}/search', [UserController::class, 'userTypeSearch']);
@@ -250,6 +252,8 @@ Route::get('supplier-type', [OhMiPiMiSupplierTypeController::class, 'index']);
 Route::post('supplier-type', [OhMiPiMiSupplierTypeController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Grades
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
     Route::post('grade/{gradeId}', [ComGradesController::class, 'update']);
@@ -316,6 +320,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('parent-profiles/{id}', [ComParentProfileController::class, 'update']);
     Route::delete('parent-profiles/{id}', [ComParentProfileController::class, 'destroy']);
     Route::post('parent-profiles-by-admin', [ComParentProfileController::class, 'parentProfileCreateByAdmin']);
+    Route::get('my-children/{id}', [ComParentProfileController::class, 'getMyChildren']);
+    Route::get('my-children-year/{studentId}', [ComStudentProfileController::class, 'getChildrenYears']);
+    Route::get('my-children-grade/{studentId}', [ComStudentProfileController::class, 'getChildrenGrades']);
+    Route::get('my-children-class/{studentId}', [ComStudentProfileController::class, 'getChildrenClasses']);
 
 
     // Student marks
@@ -340,8 +348,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('grade-report/{year}/{grade}/{examType}/{gradeMark}/bar-chart', [GradeReportController::class, 'getGradeReportGradeMArkCountBarChart']);
     Route::get('mark-check/{year}/{grade}/{examType}/{status}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
 
+    Route::get('parent-report/{studentId}/{year}/{examType}', [ParentReportController::class, 'getParentReport']);
+    Route::get('parent-report-line-chart/{studentId}', [ParentReportController::class, 'getParentReportLineChart']);
+
+
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);
-
     Route::get('users/Student/search', [UserController::class, 'studentSearchByEmployeeId']);
 });
