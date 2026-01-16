@@ -245,6 +245,7 @@ class UserController extends Controller
                     'parentProfileId' => $parentProfile->id,
                     'id' => $student->id,
                     'name' => $student->name,
+                    'nameWithInitials' => $student->nameWithInitials,
                     'email' => $student->email,
                     'mobile' => $student->mobile,
                     'gender' => $student->gender,
