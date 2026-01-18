@@ -39,10 +39,8 @@ class ComClassMngController extends Controller
     {
         if ($grade >= 1 && $grade <= 5) {
             $category = '1 - 5 Class';
-        } elseif ($grade >= 6 && $grade <= 9) {
-            $category = '6 - 9 Class';
-        } elseif ($grade >= 10 && $grade <= 11) {
-            $category = '10 - 11 Class';
+        } elseif ($grade >= 6 && $grade <= 11) {
+            $category = '6 - 11 Class';
         } elseif ($grade >= 12 && $grade <= 13) {
             $category = '12 - 13 Class';
         } else {
