@@ -255,7 +255,7 @@ class MarkCheckingReportController extends Controller
     private function pushTeacherResult(
         array &$results,
         int $teacherId,
-        string $teacherName,
+        ?string $teacherName,
         string $teacherEmail,
         ?string $teacherStaffId,
         ?string $teacherMobile,
