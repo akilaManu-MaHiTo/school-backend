@@ -110,6 +110,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
+use App\Http\Controllers\ComTeacherDetailsController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -297,6 +298,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('teacher-profiles/admin/{id}', [ComTeacherProfileController::class, 'updateByAdmin']);
     Route::post('teacher-profiles-create/admin/{id}', [ComTeacherProfileController::class, 'createByAdmin']);
+
+
+    // Teacher details
+    Route::get('teacher-details', [ComTeacherDetailsController::class, 'index']);
+    Route::post('teacher-details', [ComTeacherDetailsController::class, 'store']);
+    Route::get('teacher-details/{id}', [ComTeacherDetailsController::class, 'show']);
+    Route::post('teacher-details/{id}', [ComTeacherDetailsController::class, 'update']);
+    Route::delete('teacher-details/{id}', [ComTeacherDetailsController::class, 'destroy']);
 
 
 

@@ -395,6 +395,8 @@ class UserController extends Controller
         $user->nameWithInitials = $request->input('nameWithInitials', $user->nameWithInitials);
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
+        $user->dateOfRegister = $request->input('dateOfRegister', $user->dateOfRegister);
+        $user->nationalId = $request->input('nationalId', $user->nationalId);
         $user->profileImage = ! empty($newImages)
             ? array_values($newImages)
             : array_values($existingImages);

@@ -12,6 +12,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
+
             $table->string('userName')->unique();
             $table->string('nameWithInitials')->required();
             $table->string('email')->nullable()->unique();
@@ -31,6 +32,10 @@ return new class extends Migration
             $table->enum('gender', ['Male', 'Female'])->nullable();
             $table->string('birthDate')->nullable();
             $table->string('address')->nullable();
+
+            $table->string( 'nationalId')->nullable();
+            $table->string('dateOfRegister')->nullable();
+
             $table->timestamps();
         });
 
