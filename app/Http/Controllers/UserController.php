@@ -865,4 +865,8 @@ class UserController extends Controller
     {
         return $this->userTypeSearch($request, 'Student', 'user_id_desc');
     }
+    public function getTeachers(Request $request)
+    {
+        return $this->userTypeSearch($request, 'Teacher', 'user_id_desc');
+    }
 }

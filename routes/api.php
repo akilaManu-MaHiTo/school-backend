@@ -111,6 +111,7 @@ use App\Http\Controllers\ClassReportController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
+use App\Http\Controllers\ComClassTeacherController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -118,6 +119,7 @@ Route::post('register', [RegisteredUserController::class, 'store']);
 
 Route::get('all-users', [UserController::class, 'index']);
 Route::get('student-users', [UserController::class, 'getStudents']);
+Route::get('teacher-users', [UserController::class, 'getTeachers']);
 Route::get('users/search', [UserController::class, 'search']);
 
 Route::get('users/{userRole}/{sortBy}/search', [UserController::class, 'userTypeSearch']);
@@ -282,6 +284,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-by-grade/{gradeId}', [ComClassMngController::class, 'getClassesByGrade']);
     Route::post('class/{id}', [ComClassMngController::class, 'update']);
     Route::delete('class/{id}', [ComClassMngController::class, 'destroy']);
+
+
+    // Class teachers (ComClassTeacher)
+    Route::get('class-teacher', [ComClassTeacherController::class, 'index']);
+    Route::post('class-teacher', [ComClassTeacherController::class, 'store']);
+    Route::get('class-teacher/{id}', [ComClassTeacherController::class, 'show']);
+    Route::post('class-teacher/{id}', [ComClassTeacherController::class, 'update']);
+    Route::delete('class-teacher/{id}', [ComClassTeacherController::class, 'destroy']);
 
 
     // Teacher profiles
