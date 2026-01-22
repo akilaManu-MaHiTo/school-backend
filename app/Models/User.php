@@ -30,6 +30,8 @@ class User extends Authenticatable
         'availability',
         'birthDate',
         'address',
+        'nationalId',
+        'dateOfRegister',
 
     ];
 
