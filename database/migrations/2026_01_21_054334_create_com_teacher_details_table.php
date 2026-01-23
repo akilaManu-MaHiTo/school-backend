@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('civilStatus')->nullable();
             $table->string('dateOfRetirement')->nullable();
             $table->string('dateOfFirstRegistration')->nullable();
-            $table->string('teacherTransfer')->nullable();
+            $table->string('teacherType')->nullable();
             $table->string('teacherGrade')->nullable();
             $table->string('dateOfGrade')->nullable();
             $table->string('salaryType')->nullable();

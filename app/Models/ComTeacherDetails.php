@@ -18,7 +18,7 @@ class ComTeacherDetails extends Model
         'civilStatus',
         'dateOfRetirement',
         'dateOfFirstRegistration',
-        'teacherTransfer',
+        'teacherType',
         'teacherGrade',
         'dateOfGrade',
         'salaryType',
