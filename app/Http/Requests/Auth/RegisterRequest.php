@@ -23,6 +23,7 @@ class RegisterRequest extends FormRequest
             'mobile'            => ['required', 'string', 'max:15',],
             'employeeType'      => ['required', 'string', 'max:255'],
             'employeeNumber'    => ['nullable', 'string', 'max:255', 'unique:users', 'required_if:employeeType,Teacher,Student'],
+            'nationalId'        => ['nullable', 'string', 'max:20', 'unique:users'],
         ];
     }
 

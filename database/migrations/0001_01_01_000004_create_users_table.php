@@ -33,7 +33,7 @@ return new class extends Migration
             $table->string('birthDate')->nullable();
             $table->string('address')->nullable();
 
-            $table->string( 'nationalId')->nullable();
+            $table->string( 'nationalId')->nullable()->unique();
             $table->string('dateOfRegister')->nullable();
 
             $table->timestamps();

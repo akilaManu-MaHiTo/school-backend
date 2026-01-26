@@ -115,6 +115,9 @@ class ComStudentProfileController extends Controller
             ->where('academicYear', $year)
             ->where('academicGradeId', $gradeId)
             ->where('academicClassId', $classId)
+            ->whereHas('student', function ($query) {
+                $query->where('availability', 1);
+            })
             ->get();
 
         if ($profiles->isEmpty()) {
@@ -324,6 +327,9 @@ class ComStudentProfileController extends Controller
 
         $profiles = ComStudentProfile::query()
             ->with(['student', 'grade', 'class'])
+            ->whereHas('student', function ($query) {
+                $query->where('availability', 1);
+            })
             ->where('academicGradeId', $gradeId)
             ->where('academicClassId', $classId)
             ->where('academicMedium', $medium)

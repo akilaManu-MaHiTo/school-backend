@@ -609,6 +609,12 @@ class UserController extends Controller
         } else {
             $users = $this->userInterface->All();
         }
+
+        // Only return active/available users
+        $users = $users->filter(function ($user) {
+            return (int) ($user->availability ?? 0) === 1;
+        })->values();
+
         if (strtolower($userRole) !== 'all') {
             $users = $users->filter(function ($user) use ($userRole) {
                 return isset($user->employeeType)
