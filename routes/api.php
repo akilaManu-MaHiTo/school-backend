@@ -113,6 +113,8 @@ use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
 use App\Http\Controllers\ComClassTeacherController;
 use App\Http\Controllers\StaffMainDashboardController;
+use App\Http\Controllers\ParentDashboardAIController;
+use App\Http\Controllers\StudentServiceChargesController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -353,6 +355,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
 
+    // Student service charges
+    Route::get('student-service-charges', [StudentServiceChargesController::class, 'index']);
+    Route::get('student-service-charges/{id}/student', [StudentServiceChargesController::class, 'getChargesByStudentId']);
+    Route::get('student-service-charges/{year}/{gradeId}/{classId}/{category}/check', [StudentServiceChargesController::class, 'checkChargesByYearGradeClass']);
+
+    Route::post('student-service-charges', [StudentServiceChargesController::class, 'store']);
+    Route::get('student-service-charges/{id}', [StudentServiceChargesController::class, 'show']);
+    Route::post('student-service-charges/{id}', [StudentServiceChargesController::class, 'update']);
+    Route::delete('student-service-charges/{id}', [StudentServiceChargesController::class, 'destroy']);
+
     Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/mark-grades-table', [ClassReportController::class, 'getMarksGradeTable']);
@@ -364,12 +376,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-mark-grades-table', [ClassReportController::class, 'getAllMarksGradeTable']);
 
+    Route::get('teacher-dashboard/{teacherId}/{year}', [ClassReportController::class, 'getTeacherStatsByYear']);
+
+
     Route::get('grade-report/{year}/{grade}/{examType}/bar-chart', [GradeReportController::class, 'getGradeReportBarChart']);
     Route::get('grade-report/{year}/{grade}/{examType}/{gradeMark}/bar-chart', [GradeReportController::class, 'getGradeReportGradeMArkCountBarChart']);
     Route::get('mark-check/{year}/{grade}/{examType}/{status}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
 
     Route::get('parent-report/{studentId}/{year}/{examType}', [ParentReportController::class, 'getParentReport']);
     Route::get('parent-report-line-chart/{studentId}', [ParentReportController::class, 'getParentReportLineChart']);
+    Route::get('student-class-average/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentClassAverage']);
+    Route::get('student-class-week-subject/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentWeekSubjectDetails']);
+    Route::get('student-class-strong-subject/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentStrongSubjectDetails']);
+    Route::get('student-class-ai-assistance/{studentId}/{year}/{examType}', [ParentDashboardAIController::class, 'getStudentAiAssistanceDetails']);
+
 
 
     //update user Active status
