@@ -112,6 +112,7 @@ use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
 use App\Http\Controllers\ComClassTeacherController;
+use App\Http\Controllers\ParentDashboardAIController;
 use App\Http\Controllers\StudentServiceChargesController;
 use Illuminate\Support\Facades\Route;
 
@@ -380,6 +381,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('parent-report/{studentId}/{year}/{examType}', [ParentReportController::class, 'getParentReport']);
     Route::get('parent-report-line-chart/{studentId}', [ParentReportController::class, 'getParentReportLineChart']);
+    Route::get('student-class-average/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentClassAverage']);
+    Route::get('student-class-week-subject/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentWeekSubjectDetails']);
+    Route::get('student-class-strong-subject/{studentId}/{year}/{examType}', [ParentReportController::class, 'getStudentStrongSubjectDetails']);
+    Route::get('student-class-ai-assistance/{studentId}/{year}/{examType}', [ParentDashboardAIController::class, 'getStudentAiAssistanceDetails']);
+
 
 
     //update user Active status

@@ -11,6 +11,264 @@ use Illuminate\Support\Collection;
 
 class ParentReportController extends Controller
 {
+    public function getStudentWeekSubjectDetails(int $studentId, string $year, string $examType): JsonResponse
+    {
+        $standardTerms = ['Term 1', 'Term 2', 'Term 3'];
+
+        if ($examType !== 'All' && ! in_array($examType, $standardTerms, true)) {
+            return response()->json([
+                'message' => 'Invalid examType. Use Term 1, Term 2, Term 3, or All.',
+            ], 422);
+        }
+
+        $studentProfile = ComStudentProfile::query()
+            ->where('studentId', $studentId)
+            ->where('academicYear', $year)
+            ->first();
+
+        if (! $studentProfile) {
+            return response()->json([], 404);
+        }
+
+        $gradeId = (int) $studentProfile->academicGradeId;
+        $classId = (int) $studentProfile->academicClassId;
+
+        $studentProfiles = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->get();
+
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Pre-load marks for each standard term for the whole class
+        $marksByTerm = [];
+        foreach ($standardTerms as $term) {
+            $marksByTerm[$term] = $this->getMarksForProfiles($studentProfiles, $year, $term);
+        }
+
+        $previousMarksBySubject = [];
+        $termRows               = [];
+
+        foreach ($standardTerms as $term) {
+            /** @var Collection<int, StudentMarks> $marks */
+            $marks = $marksByTerm[$term];
+
+            $weakSubjects = [];
+
+            if (! $marks->isEmpty()) {
+                $classSubjectAverages = $this->buildClassSubjectAverages($marks);
+
+                $studentMarks = $marks->filter(function (StudentMarks $mark) use ($studentProfile) {
+                    return (int) $mark->studentProfileId === (int) $studentProfile->id;
+                });
+
+                foreach ($studentMarks as $mark) {
+                    $subject = $mark->subject;
+
+                    if (! $subject) {
+                        continue;
+                    }
+
+                    $subjectId   = (int) $subject->id;
+                    $isAbsent    = (bool) $mark->isAbsentStudent;
+                    $numericMark = $mark->studentMark !== null ? (float) $mark->studentMark : null;
+
+                    if ($isAbsent || $numericMark === null) {
+                        // Do not consider absent or null marks for weak/strong calculations,
+                        // and do not update previous mark history.
+                        continue;
+                    }
+
+                    $classAverage = $classSubjectAverages[$subjectId] ?? null;
+                    $previousMark = $previousMarksBySubject[$subjectId] ?? null;
+
+                    $trend = $previousMark !== null
+                        ? $this->buildTrend($previousMark, $numericMark, true)
+                        : null;
+
+                    // Update history for next term's trend calculation
+                    $previousMarksBySubject[$subjectId] = $numericMark;
+
+                    if ($classAverage === null || $numericMark >= $classAverage) {
+                        // Not a weak subject
+                        continue;
+                    }
+
+                    $weakSubjects[] = [
+                        'subjectId'             => $subjectId,
+                        'subjectName'           => $subject->subjectName,
+                        'colorCode'             => $subject->colorCode,
+                        'studentMark'           => $numericMark,
+                        'classAverageMark'      => $classAverage,
+                        'differenceFromClass'   => $numericMark - $classAverage,
+                        'trendFromPreviousTerm' => $trend,
+                    ];
+                }
+
+                // Weakest subjects first
+                usort($weakSubjects, function (array $a, array $b) {
+                    return $a['differenceFromClass'] <=> $b['differenceFromClass'];
+                });
+
+                // Limit to 3 weakest subjects
+                $weakSubjects = array_slice($weakSubjects, 0, 3);
+            }
+
+            $termRows[] = [
+                'term'         => $term,
+                'weakSubjects' => $weakSubjects,
+            ];
+        }
+
+        // For single-term requests, return only the requested term row
+        if ($examType !== 'All') {
+            $termRows = array_values(array_filter($termRows, function (array $row) use ($examType) {
+                return $row['term'] === $examType;
+            }));
+        }
+
+        return response()->json([
+            'studentId' => $studentId,
+            'year'      => $year,
+            'gradeId'   => $gradeId,
+            'classId'   => $classId,
+            'examType'  => $examType,
+            'terms'     => $termRows,
+        ]);
+    }
+
+    public function getStudentStrongSubjectDetails(int $studentId, string $year, string $examType): JsonResponse
+    {
+        $standardTerms = ['Term 1', 'Term 2', 'Term 3'];
+
+        if ($examType !== 'All' && ! in_array($examType, $standardTerms, true)) {
+            return response()->json([
+                'message' => 'Invalid examType. Use Term 1, Term 2, Term 3, or All.',
+            ], 422);
+        }
+
+        $studentProfile = ComStudentProfile::query()
+            ->where('studentId', $studentId)
+            ->where('academicYear', $year)
+            ->first();
+
+        if (! $studentProfile) {
+            return response()->json([], 404);
+        }
+
+        $gradeId = (int) $studentProfile->academicGradeId;
+        $classId = (int) $studentProfile->academicClassId;
+
+        $studentProfiles = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->get();
+
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Pre-load marks for each standard term for the whole class
+        $marksByTerm = [];
+        foreach ($standardTerms as $term) {
+            $marksByTerm[$term] = $this->getMarksForProfiles($studentProfiles, $year, $term);
+        }
+
+        $previousMarksBySubject = [];
+        $termRows               = [];
+
+        foreach ($standardTerms as $term) {
+            /** @var Collection<int, StudentMarks> $marks */
+            $marks = $marksByTerm[$term];
+
+            $strongSubjects = [];
+
+            if (! $marks->isEmpty()) {
+                $classSubjectAverages = $this->buildClassSubjectAverages($marks);
+
+                $studentMarks = $marks->filter(function (StudentMarks $mark) use ($studentProfile) {
+                    return (int) $mark->studentProfileId === (int) $studentProfile->id;
+                });
+
+                foreach ($studentMarks as $mark) {
+                    $subject = $mark->subject;
+
+                    if (! $subject) {
+                        continue;
+                    }
+
+                    $subjectId   = (int) $subject->id;
+                    $isAbsent    = (bool) $mark->isAbsentStudent;
+                    $numericMark = $mark->studentMark !== null ? (float) $mark->studentMark : null;
+
+                    if ($isAbsent || $numericMark === null) {
+                        // Do not consider absent or null marks for weak/strong calculations,
+                        // and do not update previous mark history.
+                        continue;
+                    }
+
+                    $classAverage = $classSubjectAverages[$subjectId] ?? null;
+                    $previousMark = $previousMarksBySubject[$subjectId] ?? null;
+
+                    $trend = $previousMark !== null
+                        ? $this->buildTrend($previousMark, $numericMark, true)
+                        : null;
+
+                    // Update history for next term's trend calculation
+                    $previousMarksBySubject[$subjectId] = $numericMark;
+
+                    if ($classAverage === null || $numericMark < $classAverage) {
+                        // Not a strong subject
+                        continue;
+                    }
+
+                    $strongSubjects[] = [
+                        'subjectId'             => $subjectId,
+                        'subjectName'           => $subject->subjectName,
+                        'colorCode'             => $subject->colorCode,
+                        'studentMark'           => $numericMark,
+                        'classAverageMark'      => $classAverage,
+                        'differenceFromClass'   => $numericMark - $classAverage,
+                        'trendFromPreviousTerm' => $trend,
+                    ];
+                }
+
+                // Strongest subjects first
+                usort($strongSubjects, function (array $a, array $b) {
+                    return $b['differenceFromClass'] <=> $a['differenceFromClass'];
+                });
+
+                // Limit to 3 strongest subjects
+                $strongSubjects = array_slice($strongSubjects, 0, 3);
+            }
+
+            $termRows[] = [
+                'term'           => $term,
+                'strongSubjects' => $strongSubjects,
+            ];
+        }
+
+        // For single-term requests, return only the requested term row
+        if ($examType !== 'All') {
+            $termRows = array_values(array_filter($termRows, function (array $row) use ($examType) {
+                return $row['term'] === $examType;
+            }));
+        }
+
+        return response()->json([
+            'studentId' => $studentId,
+            'year'      => $year,
+            'gradeId'   => $gradeId,
+            'classId'   => $classId,
+            'examType'  => $examType,
+            'terms'     => $termRows,
+        ]);
+    }
+
     public function getParentReportLineChart(int $studentId): JsonResponse
     {
         $marks = StudentMarks::query()
@@ -108,8 +366,8 @@ class ParentReportController extends Controller
             return response()->json([]);
         }
 
-        $gradeModel = ComGrades::find($gradeId);
-        $classModel = ComClassMng::find($classId);
+        $gradeModel = ComGrades::find($gradeId, ['*']);
+        $classModel = ComClassMng::find($classId, ['*']);
 
         // If "All" is requested, return Term 1, Term 2 and Term 3 details
         if ($examType === 'All') {
@@ -200,6 +458,109 @@ class ParentReportController extends Controller
         return response()->json([$data]);
     }
 
+    public function getStudentClassAverage(int $studentId, string $year, string $examType): JsonResponse
+    {
+        $standardTerms = ['Term 1', 'Term 2', 'Term 3'];
+
+        if ($examType !== 'All' && ! in_array($examType, $standardTerms, true)) {
+            return response()->json([
+                'message' => 'Invalid examType. Use Term 1, Term 2, Term 3, or All.',
+            ], 422);
+        }
+
+        $studentProfile = ComStudentProfile::query()
+            ->where('studentId', $studentId)
+            ->where('academicYear', $year)
+            ->first();
+
+        if (! $studentProfile) {
+            return response()->json([], 404);
+        }
+
+        $gradeId = (int) $studentProfile->academicGradeId;
+        $classId = (int) $studentProfile->academicClassId;
+
+        $studentProfiles = ComStudentProfile::query()
+            ->where('academicGradeId', $gradeId)
+            ->where('academicClassId', $classId)
+            ->where('academicYear', $year)
+            ->get();
+
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // If a single term is requested (Term 2/Term 3) we still fetch the previous term
+        // so that a trend can be computed.
+        $termsToProcess = $examType === 'All' ? $standardTerms : [$examType];
+
+        if ($examType !== 'All') {
+            $previous = $this->getPreviousStandardTerm($examType);
+            if ($previous !== null) {
+                $termsToProcess = [$previous, $examType];
+            }
+        }
+
+        $termRows = [];
+        $previousRow = null;
+
+        foreach ($termsToProcess as $term) {
+            $marks = $this->getMarksForProfiles($studentProfiles, $year, $term);
+
+            $positionInfo = $marks->isEmpty()
+                ? ['average' => null, 'position' => null]
+                : $this->calculateStudentPosition($studentProfiles, $marks, (int) $studentProfile->id, $studentId);
+
+            $classAverage = $marks->isEmpty()
+                ? null
+                : $this->calculateClassAverageFromMarks($studentProfiles, $marks);
+
+            $row = [
+                'term'           => $term,
+                'studentAverage' => $positionInfo['average'],
+                'studentPosition'=> $positionInfo['position'],
+                'classAverage'   => $classAverage,
+                'trend'          => [
+                    // Trend is relative to the previous standard term.
+                    'fromTerm'       => $previousRow['term'] ?? null,
+                    'position'       => $this->buildTrend(
+                        $previousRow['studentPosition'] ?? null,
+                        $positionInfo['position'],
+                        false
+                    ),
+                    'studentAverage' => $this->buildTrend(
+                        $previousRow['studentAverage'] ?? null,
+                        $positionInfo['average'],
+                        true
+                    ),
+                    'classAverage'   => $this->buildTrend(
+                        $previousRow['classAverage'] ?? null,
+                        $classAverage,
+                        true
+                    ),
+                ],
+            ];
+
+            $termRows[] = $row;
+            $previousRow = $row;
+        }
+
+        // For single-term requests where we loaded the previous term for trend,
+        // return only the requested term row.
+        if ($examType !== 'All' && count($termRows) === 2) {
+            $termRows = [$termRows[1]];
+        }
+
+        return response()->json([
+            'studentId' => $studentId,
+            'year'      => $year,
+            'gradeId'   => $gradeId,
+            'classId'   => $classId,
+            'examType'  => $examType,
+            'terms'     => $termRows,
+        ]);
+    }
+
     /**
      * @param Collection<int, ComStudentProfile> $studentProfiles
      * @return Collection<int, StudentMarks>
@@ -214,6 +575,94 @@ class ParentReportController extends Controller
             ->where('academicYear', $year)
             ->where('academicTerm', $examType)
             ->get();
+    }
+
+    /**
+     * @param Collection<int, ComStudentProfile> $studentProfiles
+     * @param Collection<int, StudentMarks> $marks
+     */
+    private function calculateClassAverageFromMarks(Collection $studentProfiles, Collection $marks): float
+    {
+        $profileAverages = $this->buildProfileAverages($studentProfiles, $marks);
+        $count = count($profileAverages);
+
+        if ($count === 0) {
+            return 0.0;
+        }
+
+        return array_sum($profileAverages) / $count;
+    }
+
+    /**
+     * @param Collection<int, ComStudentProfile> $studentProfiles
+     * @param Collection<int, StudentMarks> $marks
+     * @return array<int, float> keyed by studentProfileId
+     */
+    private function buildProfileAverages(Collection $studentProfiles, Collection $marks): array
+    {
+        $validMarks = $marks
+            ->where('isAbsentStudent', false)
+            ->filter(function (StudentMarks $mark) {
+                return $mark->studentMark !== null;
+            });
+
+        $marksByStudentProfile = $validMarks->groupBy('studentProfileId');
+
+        $averages = [];
+
+        foreach ($studentProfiles as $profile) {
+            $profileMarks = $marksByStudentProfile->get($profile->id, collect());
+
+            $total = $profileMarks->sum(function (StudentMarks $m) {
+                return (float) $m->studentMark;
+            });
+            $count = $profileMarks->count();
+
+            $averages[(int) $profile->id] = $count > 0 ? $total / $count : 0.0;
+        }
+
+        return $averages;
+    }
+
+    /**
+     * @param string $term
+     */
+    private function getPreviousStandardTerm(string $term): ?string
+    {
+        $order = ['Term 1', 'Term 2', 'Term 3'];
+        $index = array_search($term, $order, true);
+
+        if ($index === false || $index === 0) {
+            return null;
+        }
+
+        return $order[$index - 1];
+    }
+
+    /**
+     * Build a trend object comparing previous to current.
+     *
+     * @param int|float|null $previous
+     * @param int|float|null $current
+     * @param bool $higherIsBetter
+     * @return array{direction: 'up'|'down'|'same', delta: int|float}|null
+     */
+    private function buildTrend(int|float|null $previous, int|float|null $current, bool $higherIsBetter): ?array
+    {
+        if ($previous === null || $current === null) {
+            return null;
+        }
+
+        if ($current === $previous) {
+            return ['direction' => 'same', 'delta' => 0];
+        }
+
+        $isImprovement = $higherIsBetter ? ($current > $previous) : ($current < $previous);
+
+        return [
+            'direction' => $isImprovement ? 'up' : 'down',
+            'delta'     => is_int($current) && is_int($previous) ? abs($current - $previous) : abs((float) $current - (float) $previous),
+        ];
     }
 
     /**
@@ -344,29 +793,15 @@ class ParentReportController extends Controller
      */
     private function calculateStudentPosition(Collection $studentProfiles, Collection $marks, int $targetStudentProfileId, int $targetStudentId): array
     {
-        $validMarks = $marks
-            ->where('isAbsentStudent', false)
-            ->filter(function (StudentMarks $mark) {
-                return $mark->studentMark !== null;
-            });
-
-        $marksByStudentProfile = $validMarks->groupBy('studentProfileId');
+        $profileAverages = $this->buildProfileAverages($studentProfiles, $marks);
 
         $studentAverages = [];
 
         foreach ($studentProfiles as $profile) {
-            $profileMarks = $marksByStudentProfile->get($profile->id, collect());
-
-            $total = $profileMarks->sum(function (StudentMarks $m) {
-                return (float) $m->studentMark;
-            });
-            $count = $profileMarks->count();
-            $avg   = $count > 0 ? $total / $count : 0.0;
-
             $studentAverages[] = [
                 'studentProfileId' => (int) $profile->id,
                 'studentId'        => (int) $profile->studentId,
-                'average'          => $avg,
+                'average'          => $profileAverages[(int) $profile->id] ?? 0.0,
             ];
         }
 
