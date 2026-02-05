@@ -112,6 +112,7 @@ use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
 use App\Http\Controllers\ComClassTeacherController;
+use App\Http\Controllers\StudentServiceChargesController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -351,6 +352,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-marks/{id}', [StudentMarksController::class, 'show']);
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
+
+    // Student service charges
+    Route::get('student-service-charges', [StudentServiceChargesController::class, 'index']);
+    Route::get('student-service-charges/{id}/student', [StudentServiceChargesController::class, 'getChargesByStudentId']);
+    Route::get('student-service-charges/{year}/{gradeId}/{classId}/{category}/check', [StudentServiceChargesController::class, 'checkChargesByYearGradeClass']);
+
+    Route::post('student-service-charges', [StudentServiceChargesController::class, 'store']);
+    Route::get('student-service-charges/{id}', [StudentServiceChargesController::class, 'show']);
+    Route::post('student-service-charges/{id}', [StudentServiceChargesController::class, 'update']);
+    Route::delete('student-service-charges/{id}', [StudentServiceChargesController::class, 'destroy']);
 
     Route::get('class-report/{year}/{grade}/{class}/{examType}/bar-chart', [ClassReportController::class, 'getClassBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/{examType}/report-card', [ClassReportController::class, 'getClassReportCard']);
