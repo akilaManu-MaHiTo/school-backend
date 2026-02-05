@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ComClassMng;
+use App\Models\ComClassTeacher;
 use App\Models\ComGrades;
 use App\Models\ComStudentProfile;
 use App\Models\StudentMarks;
@@ -677,5 +678,109 @@ class ClassReportController extends Controller
         unset($entry);
 
         return $markData;
+    }
+
+    /**
+     * Get student marks grades counts by teacherId and year,
+     * grouped by grade/class/subject with class teacher info.
+     */
+    public function getTeacherStatsByYear(int $teacherId, string $year): JsonResponse
+    {
+        // Get all classes where this teacher is the class teacher for the given year
+        $classTeachers = ComClassTeacher::query()
+            ->with(['class', 'grade', 'teacher'])
+            ->where('teacherId', $teacherId)
+            ->where('year', $year)
+            ->get();
+
+        // Get all student marks created by this teacher for the given year
+        $teacherMarks = StudentMarks::query()
+            ->with(['studentProfile.grade', 'studentProfile.class', 'subject'])
+            ->where('createdByTeacher', $teacherId)
+            ->where('academicYear', $year)
+            ->get();
+
+        // Define all possible mark grades
+        $allGrades = ['A', 'B', 'C', 'S', 'W'];
+
+        // Group marks by grade, class, and subject
+        $groupedStats = [];
+
+        foreach ($teacherMarks as $mark) {
+            $profile = $mark->studentProfile;
+            $subject = $mark->subject;
+            if (! $profile || ! $subject) {
+                continue;
+            }
+
+            $gradeId = $profile->academicGradeId;
+            $classId = $profile->academicClassId;
+            $subjectId = $mark->academicSubjectId;
+            $key = "{$gradeId}_{$classId}_{$subjectId}";
+
+            if (! isset($groupedStats[$key])) {
+                // Find if this teacher is the class teacher for this grade/class
+                $classTeacher = $classTeachers->first(function ($ct) use ($gradeId, $classId) {
+                    return $ct->gradeId == $gradeId && $ct->classId == $classId;
+                });
+
+                $groupedStats[$key] = [
+                    'year'             => $year,
+                    'gradeId'          => $gradeId,
+                    'gradeName'        => $profile->grade?->grade ?? null,
+                    'classId'          => $classId,
+                    'className'        => $profile->class?->className ?? null,
+                    'subjectId'        => $subjectId,
+                    'subjectName'      => $subject->subjectName ?? null,
+                    'subjectColorCode' => $subject->colorCode ?? null,
+                    'isClassTeacher'   => $classTeacher !== null,
+                    'classTeacherId'   => $classTeacher?->id ?? null,
+                    'classTeacherData' => $classTeacher ? [
+                        'id'        => $classTeacher->id,
+                        'teacherId' => $classTeacher->teacherId,
+                        'teacher'   => $classTeacher->teacher ? [
+                            'id'   => $classTeacher->teacher->id,
+                            'name' => $classTeacher->teacher->name,
+                        ] : null,
+                    ] : null,
+                    'totalMarks'       => 0,
+                    'gradeCounts'      => array_fill_keys($allGrades, 0),
+                    'termStats'        => [
+                        'Term 1' => ['total' => 0, 'gradeCounts' => array_fill_keys($allGrades, 0)],
+                        'Term 2' => ['total' => 0, 'gradeCounts' => array_fill_keys($allGrades, 0)],
+                        'Term 3' => ['total' => 0, 'gradeCounts' => array_fill_keys($allGrades, 0)],
+                    ],
+                ];
+            }
+
+            // Count the mark
+            $groupedStats[$key]['totalMarks']++;
+
+            // Count by mark grade
+            $markGrade = strtoupper((string) $mark->markGrade);
+            if (in_array($markGrade, $allGrades)) {
+                $groupedStats[$key]['gradeCounts'][$markGrade]++;
+            }
+
+            // Count by term
+            $term = $mark->academicTerm;
+            if (isset($groupedStats[$key]['termStats'][$term])) {
+                $groupedStats[$key]['termStats'][$term]['total']++;
+                if (in_array($markGrade, $allGrades)) {
+                    $groupedStats[$key]['termStats'][$term]['gradeCounts'][$markGrade]++;
+                }
+            }
+        }
+
+        // Convert to array and sort by grade, class, then subject
+        $result = collect($groupedStats)->values()->sortBy([
+            ['gradeName', 'asc'],
+            ['className', 'asc'],
+            ['subjectName', 'asc'],
+        ])->values()->all();
+
+        return response()->json(
+            $result,
+        );
     }
 }

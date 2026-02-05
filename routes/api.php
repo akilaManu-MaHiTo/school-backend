@@ -375,6 +375,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-report/{year}/{grade}/{class}/All/all-bar-chart', [ClassReportController::class, 'getClassAllBarChart']);
     Route::get('class-report/{year}/{grade}/{class}/All/all-mark-grades-table', [ClassReportController::class, 'getAllMarksGradeTable']);
 
+    Route::get('teacher-dashboard/{teacherId}/{year}', [ClassReportController::class, 'getTeacherStatsByYear']);
+
+
     Route::get('grade-report/{year}/{grade}/{examType}/bar-chart', [GradeReportController::class, 'getGradeReportBarChart']);
     Route::get('grade-report/{year}/{grade}/{examType}/{gradeMark}/bar-chart', [GradeReportController::class, 'getGradeReportGradeMArkCountBarChart']);
     Route::get('mark-check/{year}/{grade}/{examType}/{status}/search', [MarkCheckingReportController::class, 'checkMarkTeacher']);
