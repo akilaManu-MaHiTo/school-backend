@@ -112,6 +112,7 @@ use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
 use App\Http\Controllers\ComClassTeacherController;
+use App\Http\Controllers\StaffMainDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -374,4 +375,9 @@ Route::middleware('auth:sanctum')->group(function () {
     //update user Active status
     Route::post('users/{id}/active-status', [AdminController::class, 'updateActiveStatus']);
     Route::get('users/Student/search', [UserController::class, 'studentSearchByEmployeeId']);
+
+    Route::get('staff-dashboard/{year}', [StaffMainDashboardController::class, 'getYearClassesStudentCount']);
+    Route::get('staff-dashboard-all-students/{year}', [StaffMainDashboardController::class, 'getAllStudentsCount']);
+    Route::get('staff-dashboard-all-teachers/{year}', [StaffMainDashboardController::class, 'getAllTeachersCount']);
+    Route::get('staff-dashboard-all-parents', [StaffMainDashboardController::class, 'getAllParentsCount']);
 });
