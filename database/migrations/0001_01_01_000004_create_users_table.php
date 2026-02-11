@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nameWithInitials')->required();
             $table->string('email')->nullable()->unique();
             $table->string('password');
-            $table->enum('employeeType', ['Student', 'Teacher', 'Parent'])->default('Student');
+            $table->enum('employeeType', ['Student', 'Teacher', 'Parent','OldStudent'])->default('Student');
             $table->string('employeeNumber')->nullable()->unique();
             $table->string('mobile')->nullable();
             $table->rememberToken();

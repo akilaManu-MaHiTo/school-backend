@@ -22,7 +22,7 @@ class RegisterRequest extends FormRequest
             'password'          => ['required', 'min:4', 'confirmed', 'max:15'],
             'mobile'            => ['required', 'string', 'max:15',],
             'employeeType'      => ['required', 'string', 'max:255'],
-            'employeeNumber'    => ['nullable', 'string', 'max:255', 'unique:users', 'required_if:employeeType,Teacher,Student'],
+            'employeeNumber'    => ['nullable', 'string', 'max:255', 'unique:users', 'required_if:employeeType,Teacher,Student,OldStudent'],
             'nationalId'        => ['nullable', 'string', 'max:20', 'unique:users'],
         ];
     }
