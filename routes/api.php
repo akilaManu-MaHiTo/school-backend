@@ -106,6 +106,7 @@ use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGController;
 use App\Http\Controllers\SustainabilityAppsControllers\SaSrSDGReportingRecodeController;
 use App\Http\Controllers\MarkCheckingReportController;
 use App\Http\Controllers\StudentMarksController;
+use App\Http\Controllers\StudentNotificationsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
 use App\Http\Controllers\GradeReportController;
@@ -354,6 +355,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-marks/{id}', [StudentMarksController::class, 'show']);
     Route::post('student-marks/{id}', [StudentMarksController::class, 'update']);
     Route::delete('student-marks/{id}', [StudentMarksController::class, 'destroy']);
+
+    // Student notifications
+    Route::get('student-notifications', [StudentNotificationsController::class, 'index']);
+    Route::post('student-notifications', [StudentNotificationsController::class, 'store']);
+    Route::get('student-notifications/{id}', [StudentNotificationsController::class, 'show']);
+    Route::post('student-notifications/{id}', [StudentNotificationsController::class, 'update']);
+    Route::delete('student-notifications/{id}', [StudentNotificationsController::class, 'destroy']);
+    Route::get('student-notifications-by-student', [StudentNotificationsController::class, 'getNotificationsByStudent']);
+    Route::get('student-notifications-count-by-student', [StudentNotificationsController::class, 'getNotificationsCountByStudent']);
+    Route::post('student-notifications/{id}/mark-as-read', [StudentNotificationsController::class, 'markAsRead']);
+    Route::post('student-notifications-mark-all-as-read', [StudentNotificationsController::class, 'markAllNotificationAsRead']);
+
+
 
     // Student service charges
     Route::get('student-service-charges', [StudentServiceChargesController::class, 'index']);
