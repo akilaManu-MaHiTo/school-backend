@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StudentNotifications\StudentNotificationsRequest;
+use App\Models\ComParentProfile;
 use App\Models\ComStudentProfile;
 use App\Models\StudentNotifications;
 use Illuminate\Http\JsonResponse;
@@ -234,6 +235,76 @@ class StudentNotificationsController extends Controller
         );
     }
 
+    public function getNotificationByParent(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $childIds = ComParentProfile::query()
+            ->where('parentId', $user->id)
+            ->pluck('studentId')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($childIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No children found for the current parent.',
+            ], 404);
+        }
+
+        $profileQuery = ComStudentProfile::query()->whereIn('studentId', $childIds);
+
+        if ($request->filled('year')) {
+            $profileQuery->where('academicYear', $request->input('year'));
+        }
+        if ($request->filled('gradeId')) {
+            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+        }
+        if ($request->filled('classId')) {
+            $profileQuery->where('academicClassId', $request->input('classId'));
+        }
+
+        $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student profiles not found for the current parent.',
+            ], 404);
+        }
+
+        $notifications = StudentNotifications::with(['grade', 'class', 'createdByUser'])
+            ->where(function ($query) use ($profiles) {
+                foreach ($profiles as $profile) {
+                    $query->orWhere(function ($nested) use ($profile) {
+                        $nested->where('year', $profile->academicYear)
+                            ->where('gradeId', $profile->academicGradeId)
+                            ->where('classId', $profile->academicClassId);
+                    });
+                }
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $userId = (int) $user->id;
+        $payload = $notifications->map(function (StudentNotifications $notification) use ($userId) {
+            $ignored = is_array($notification->ignoreUserIds) ? $notification->ignoreUserIds : [];
+            $data = $notification->toArray();
+            $data['markedAsRead'] = in_array($userId, $ignored, true);
+
+            return $data;
+        });
+
+        return response()->json(
+            $payload,
+            200
+        );
+    }
+
     public function markAsRead(int $id): JsonResponse
     {
         $user = Auth::user();
@@ -311,5 +382,96 @@ class StudentNotificationsController extends Controller
             'updatedCount' => $updatedCount,
             'missingIds' => $missingIds,
         ], 200);
+    }
+
+    public function getParentNotificationCount(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $childIds = ComParentProfile::query()
+            ->where('parentId', $user->id)
+            ->pluck('studentId')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($childIds->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No children found for the current parent.',
+            ], 404);
+        }
+
+        $profileQuery = ComStudentProfile::query()->whereIn('studentId', $childIds);
+
+        if ($request->filled('year')) {
+            $profileQuery->where('academicYear', $request->input('year'));
+        }
+        if ($request->filled('gradeId')) {
+            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+        }
+        if ($request->filled('classId')) {
+            $profileQuery->where('academicClassId', $request->input('classId'));
+        }
+
+        $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
+
+        if ($profiles->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student profiles not found for the current parent.',
+            ], 404);
+        }
+
+        $count = StudentNotifications::query()
+            ->where(function ($query) use ($profiles) {
+                foreach ($profiles as $profile) {
+                    $query->orWhere(function ($nested) use ($profile) {
+                        $nested->where('year', $profile->academicYear)
+                            ->where('gradeId', $profile->academicGradeId)
+                            ->where('classId', $profile->academicClassId);
+                    });
+                }
+            })
+            ->where(function ($query) use ($user) {
+                $query->whereNull('ignoreUserIds')
+                    ->orWhereJsonDoesntContain('ignoreUserIds', $user->id);
+            })
+            ->count();
+
+        return response()->json(
+            $count,
+            200
+        );
+    }
+
+    public function getNotificationsCreatedBy(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $query = StudentNotifications::with(['grade', 'class', 'createdByUser'])
+            ->where('createdBy', $user->id)
+            ->orderByDesc('created_at');
+
+        if ($request->filled('year')) {
+            $query->where('year', $request->input('year'));
+        }
+        if ($request->filled('gradeId')) {
+            $query->where('gradeId', $request->input('gradeId'));
+        }
+        if ($request->filled('classId')) {
+            $query->where('classId', $request->input('classId'));
+        }
+
+        return response()->json(
+            $query->get(),
+            200
+        );
     }
 }

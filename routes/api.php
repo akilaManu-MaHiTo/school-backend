@@ -367,6 +367,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('student-notifications/{id}/mark-as-read', [StudentNotificationsController::class, 'markAsRead']);
     Route::post('student-notifications-mark-all-as-read', [StudentNotificationsController::class, 'markAllNotificationAsRead']);
 
+    Route::get('student-notifications-count-by-parent', [StudentNotificationsController::class, 'getParentNotificationCount']);
+    Route::get('student-notifications-by-parent', [StudentNotificationsController::class, 'getNotificationByParent']);
+
+    Route::get('student-notifications-created-by', [StudentNotificationsController::class, 'getNotificationsCreatedBy']);
+
+
 
 
     // Student service charges
