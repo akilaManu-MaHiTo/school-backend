@@ -119,6 +119,7 @@ use App\Http\Controllers\StudentServiceChargesController;
 use App\Http\Controllers\OldStudentsUniversityController;
 use App\Http\Controllers\OldStudentsOccupationController;
 use App\Http\Controllers\OldStudentsController;
+use App\Http\Controllers\TeacherAcademicWorksController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -323,6 +324,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-details/{id}', [ComTeacherDetailsController::class, 'show']);
     Route::post('teacher-details/{id}', [ComTeacherDetailsController::class, 'update']);
     Route::delete('teacher-details/{id}', [ComTeacherDetailsController::class, 'destroy']);
+
+    // Teacher academic works
+    Route::get('teacher-academic-works', [TeacherAcademicWorksController::class, 'index']);
+    Route::get('teacher-academic-works-by-date/{date}', [TeacherAcademicWorksController::class, 'getTeacherWorksByDate']);
+    Route::get('teacher-academic-works-by-admin/{year}/{gradeId}/{classId}/{date}', [TeacherAcademicWorksController::class, 'getTeacherWorksByAdmin']);
+
+    Route::post('teacher-academic-works', [TeacherAcademicWorksController::class, 'store']);
+    Route::post('teacher-academic-works/{id}', [TeacherAcademicWorksController::class, 'update']);
+    Route::post('teacher-academic-works-approve/{id}', [TeacherAcademicWorksController::class, 'approveTeacherRecord']);
+
+    Route::delete('teacher-academic-works/{id}', [TeacherAcademicWorksController::class, 'destroy']);
 
 
 
