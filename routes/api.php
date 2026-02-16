@@ -115,6 +115,9 @@ use App\Http\Controllers\ComClassTeacherController;
 use App\Http\Controllers\StaffMainDashboardController;
 use App\Http\Controllers\ParentDashboardAIController;
 use App\Http\Controllers\StudentServiceChargesController;
+use App\Http\Controllers\OldStudentsUniversityController;
+use App\Http\Controllers\OldStudentsOccupationController;
+use App\Http\Controllers\OldStudentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('calculate', [CalculationController::class, 'store']);
@@ -400,4 +403,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('staff-dashboard-all-students/{year}', [StaffMainDashboardController::class, 'getAllStudentsCount']);
     Route::get('staff-dashboard-all-teachers/{year}', [StaffMainDashboardController::class, 'getAllTeachersCount']);
     Route::get('staff-dashboard-all-parents', [StaffMainDashboardController::class, 'getAllParentsCount']);
+
+    // Old students universities
+    Route::get('old-students-universities', [OldStudentsUniversityController::class, 'index']);
+    Route::post('old-students-universities', [OldStudentsUniversityController::class, 'store']);
+    Route::get('old-students-universities/{id}', [OldStudentsUniversityController::class, 'show']);
+    Route::post('old-students-universities/{id}', [OldStudentsUniversityController::class, 'update']);
+    Route::delete('old-students-universities/{id}', [OldStudentsUniversityController::class, 'destroy']);
+    Route::get('old-students-universities/{studentId}/byStudent', [OldStudentsUniversityController::class, 'getStudentUniversitiesByStudentId']);
+
+    // Old students occupations
+    Route::get('old-students-occupations', [OldStudentsOccupationController::class, 'index']);
+    Route::post('old-students-occupations', [OldStudentsOccupationController::class, 'store']);
+    Route::get('old-students-occupations/{id}', [OldStudentsOccupationController::class, 'show']);
+    Route::post('old-students-occupations/{id}', [OldStudentsOccupationController::class, 'update']);
+    Route::delete('old-students-occupations/{id}', [OldStudentsOccupationController::class, 'destroy']);
+    Route::get('old-students-occupations/{studentId}/byStudent', [OldStudentsOccupationController::class, 'getStudentOccupationsByStudentId']);
+
+    // Old students combined details with search
+    Route::get('old-students', [OldStudentsController::class, 'index']);
+
 });

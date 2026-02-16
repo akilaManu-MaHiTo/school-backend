@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\OldStudentsUniversity;
+use App\Models\OldStudentsOccupation;
 
 class User extends Authenticatable
 {
@@ -68,5 +70,15 @@ class User extends Authenticatable
     public function studentProfiles()
     {
         return $this->hasMany(ComStudentProfile::class, 'studentId', 'id');
+    }
+
+    public function oldUniversities()
+    {
+        return $this->hasMany(OldStudentsUniversity::class, 'studentId', 'id');
+    }
+
+    public function oldOccupations()
+    {
+        return $this->hasMany(OldStudentsOccupation::class, 'studentId', 'id');
     }
 }
