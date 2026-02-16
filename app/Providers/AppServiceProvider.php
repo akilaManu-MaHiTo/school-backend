@@ -240,6 +240,8 @@ use App\Repositories\All\SaSrSDG\SrSdgInterface;
 use App\Repositories\All\SaSrSDG\SrSdgRepository;
 use App\Repositories\All\StudentMarks\StudentMarksInterface;
 use App\Repositories\All\StudentMarks\StudentMarksRepository;
+use App\Repositories\All\TeacherAcademicWorks\TeacherAcademicWorksInterface;
+use App\Repositories\All\TeacherAcademicWorks\TeacherAcademicWorksRepository;
 use App\Repositories\All\User\UserInterface;
 use App\Repositories\All\User\UserRepository;
 use Illuminate\Support\Facades\Vite;
@@ -295,6 +297,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupplierTypeInterface::class, SupplierTypeRepository::class);
 
         $this->app->bind(ComGradesInterface::class, ComGradesRepository::class);
+        $this->app->bind(TeacherAcademicWorksInterface::class, TeacherAcademicWorksRepository::class);
         $this->app->bind(ComClassMngInterface::class, ComClassMngRepository::class);
         $this->app->bind(ComAcademicYearInterface::class, ComAcademicYearRepository::class);
         $this->app->bind(ComSubjectsInterface::class, ComSubjectsRepository::class);
