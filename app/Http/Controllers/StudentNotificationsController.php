@@ -160,19 +160,27 @@ class StudentNotificationsController extends Controller
             $profileQuery->where('academicClassId', $request->input('classId'));
         }
 
-        $profile = $profileQuery->orderByDesc('created_at')->first();
+        // Get all matching profiles for the student (one student can have many profiles)
+        $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
 
-        if (! $profile) {
+        if ($profiles->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student profile not found for the current user.',
+                'message' => 'Student profiles not found for the current user.',
             ], 404);
         }
 
+        // Fetch notifications for any of the student's profiles (year/grade/class combinations)
         $notifications = StudentNotifications::with(['grade', 'class', 'createdByUser'])
-            ->where('year', $profile->academicYear)
-            ->where('gradeId', $profile->academicGradeId)
-            ->where('classId', $profile->academicClassId)
+            ->where(function ($query) use ($profiles) {
+                foreach ($profiles as $profile) {
+                    $query->orWhere(function ($nested) use ($profile) {
+                        $nested->where('year', $profile->academicYear)
+                            ->where('gradeId', $profile->academicGradeId)
+                            ->where('classId', $profile->academicClassId);
+                    });
+                }
+            })
             ->orderByDesc('created_at')
             ->get();
 
@@ -210,19 +218,27 @@ class StudentNotificationsController extends Controller
             $profileQuery->where('academicClassId', $request->input('classId'));
         }
 
-        $profile = $profileQuery->orderByDesc('created_at')->first();
+        // Get all matching profiles for the student
+        $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
 
-        if (! $profile) {
+        if ($profiles->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student profile not found for the current user.',
+                'message' => 'Student profiles not found for the current user.',
             ], 404);
         }
 
+        // Count notifications for any of the student's profiles where the user has not ignored them
         $count = StudentNotifications::query()
-            ->where('year', $profile->academicYear)
-            ->where('gradeId', $profile->academicGradeId)
-            ->where('classId', $profile->academicClassId)
+            ->where(function ($query) use ($profiles) {
+                foreach ($profiles as $profile) {
+                    $query->orWhere(function ($nested) use ($profile) {
+                        $nested->where('year', $profile->academicYear)
+                            ->where('gradeId', $profile->academicGradeId)
+                            ->where('classId', $profile->academicClassId);
+                    });
+                }
+            })
             ->where(function ($query) use ($user) {
                 $query->whereNull('ignoreUserIds')
                     ->orWhereJsonDoesntContain('ignoreUserIds', $user->id);
