@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\ComAssigneeLevel;
+use App\Models\ComClassMng;
+use App\Models\ComGrades;
 use App\Models\ComOrganization;
 use App\Models\ComPermission;
 use App\Models\ComResponsibleSection;
@@ -141,6 +143,18 @@ class DatabaseSeeder extends Seeder
 
         ]);
 
+        ComGrades::factory()->create([
+            'id'        => 1,
+            'grade' => 'All',
+            'createdBy' => 1,
+        ]);
+
+        ComClassMng::factory()->create([
+            'id'        => 1,
+            'className' => 'All',
+            'classCategory' => 'All',
+            'createdBy' => 1,
+        ]);
         ComResponsibleSection::factory()->create([
             'id'            => 1,
             'sectionName'   => 'Hazard And Risk Section',

@@ -142,7 +142,8 @@ class ParentReportController extends Controller
 
     public function getStudentStrongSubjectDetails(int $studentId, string $year, string $examType): JsonResponse
     {
-        $standardTerms = ['Term 1', 'Term 2', 'Term 3'];
+        $standardTerms        = ['Term 1', 'Term 2', 'Term 3'];
+        $strongSubjectMinMark = 75.0; // additional threshold for strong subjects
 
         if ($examType !== 'All' && ! in_array($examType, $standardTerms, true)) {
             return response()->json([
@@ -221,8 +222,15 @@ class ParentReportController extends Controller
                     // Update history for next term's trend calculation
                     $previousMarksBySubject[$subjectId] = $numericMark;
 
-                    if ($classAverage === null || $numericMark < $classAverage) {
-                        // Not a strong subject
+                    // Strong subject patch logic:
+                    //  - keep existing rule: student's mark must be >= class average
+                    //  - additional rule: student's mark must also be >= strongSubjectMinMark (75)
+                    if (
+                        $classAverage === null
+                        || $numericMark < $classAverage
+                        || $numericMark < $strongSubjectMinMark
+                    ) {
+                        // Not a strong subject under combined rules
                         continue;
                     }
 

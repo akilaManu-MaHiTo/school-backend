@@ -267,6 +267,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Grades
     Route::post('grade', [ComGradesController::class, 'store']);
     Route::get('grade', [ComGradesController::class, 'index']);
+    Route::get('grade-all', [ComGradesController::class, 'getAllGrades']);
     Route::post('grade/{gradeId}', [ComGradesController::class, 'update']);
     Route::delete('grade/{gradeId}', [ComGradesController::class, 'destroy']);
 
@@ -288,6 +289,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Classes (ComClassMng)
     Route::post('class', [ComClassMngController::class, 'store']);
     Route::get('class', [ComClassMngController::class, 'index']);
+    Route::get('class-all', [ComClassMngController::class, 'getAllClasses']);
     Route::get('class/{id}', [ComClassMngController::class, 'show']);
     Route::get('class-by-grade/{gradeId}', [ComClassMngController::class, 'getClassesByGrade']);
     Route::post('class/{id}', [ComClassMngController::class, 'update']);
@@ -385,7 +387,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-notifications-count-by-parent', [StudentNotificationsController::class, 'getParentNotificationCount']);
     Route::get('student-notifications-by-parent', [StudentNotificationsController::class, 'getNotificationByParent']);
 
-    Route::get('student-notifications-created-by', [StudentNotificationsController::class, 'getNotificationsCreatedBy']);
+    Route::get('student-notifications-created-by/{year}/{gradeId}/{classId}', [StudentNotificationsController::class, 'getNotificationsCreatedBy']);
 
 
 
@@ -454,5 +456,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Old students combined details with search
     Route::get('old-students', [OldStudentsController::class, 'index']);
+
+    Route::get('teacher-by-student/{subjectId}/{studentId}/{year}', [TeacherAcademicWorksController::class, 'getTeacherByStudentIdAndSubjectId']);
 
 });
