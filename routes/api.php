@@ -129,6 +129,7 @@ Route::get('all-users', [UserController::class, 'index']);
 Route::get('student-users', [UserController::class, 'getStudents']);
 Route::get('teacher-users', [UserController::class, 'getTeachers']);
 Route::get('users/search', [UserController::class, 'search']);
+Route::post('old-student', [UserController::class, 'updateUserToOldStudent']);
 
 Route::get('users/{userRole}/{sortBy}/search', [UserController::class, 'userTypeSearch']);
 
@@ -137,6 +138,8 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkE
 Route::post('reset-password', [ForgotPasswordController::class, 'otpVerifyFunction']);
 Route::post('change-password', [ForgotPasswordController::class, 'changePassword']);
 Route::get('organizations', [OrganizationController::class, 'index']);
+
+
 
 Route::middleware('auth:sanctum')->get('user', [UserController::class, 'show']);
 
