@@ -116,7 +116,8 @@ class ComStudentProfileController extends Controller
             ->where('academicGradeId', $gradeId)
             ->where('academicClassId', $classId)
             ->whereHas('student', function ($query) {
-                $query->where('availability', 1);
+				$query->where('availability', 1)
+					->where('employeeType', 'Student');
             })
             ->get();
 
