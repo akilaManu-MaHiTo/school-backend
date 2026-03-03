@@ -113,6 +113,7 @@ use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
 use App\Http\Controllers\ComClassTeacherController;
+use App\Http\Controllers\ComPaymentCategoryController;
 use App\Http\Controllers\StaffMainDashboardController;
 use App\Http\Controllers\ParentDashboardAIController;
 use App\Http\Controllers\StudentServiceChargesController;
@@ -305,6 +306,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('class-teacher/{id}', [ComClassTeacherController::class, 'show']);
     Route::post('class-teacher/{id}', [ComClassTeacherController::class, 'update']);
     Route::delete('class-teacher/{id}', [ComClassTeacherController::class, 'destroy']);
+
+
+    // Payment categories
+    Route::get('payment-category', [ComPaymentCategoryController::class, 'index']);
+    Route::post('payment-category', [ComPaymentCategoryController::class, 'store']);
+    Route::get('payment-category/{id}', [ComPaymentCategoryController::class, 'show']);
+    Route::post('payment-category/{id}', [ComPaymentCategoryController::class, 'update']);
+    Route::delete('payment-category/{id}', [ComPaymentCategoryController::class, 'destroy']);
 
 
     // Teacher profiles

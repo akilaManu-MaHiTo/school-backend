@@ -14,12 +14,12 @@ class StudentServiceChargesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'studentId'       => ['required', 'integer', 'exists:users,id'],
-            'chargesCategory' => ['required', 'string', 'max:255'],
-            'amount'          => ['required', 'numeric', 'min:0'],
-            'dateCharged'     => ['required', 'string', 'max:255'],
+            'studentId'         => ['required', 'integer', 'exists:users,id'],
+            'chargesCategoryId' => ['required', 'integer', 'exists:com_payment_categories,id'],
+            'amount'            => ['required', 'numeric', 'min:0'],
+            'dateCharged'       => ['required', 'string', 'max:255'],
             'yearForCharge'     => ['required', 'integer'],
-            'remarks'         => ['nullable', 'string', 'max:1000'],
+            'remarks'           => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
