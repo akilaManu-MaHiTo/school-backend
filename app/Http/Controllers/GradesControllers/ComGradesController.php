@@ -20,7 +20,14 @@ class ComGradesController extends Controller
     public function index()
     {
         $grades = $this->comGradesInterface->All();
-        $grades = $grades->sortBy('grade')->values();
+        // Exclude the grade with ID 1 from the results
+        $grades = $grades->where('id', '!=', 1)->sortBy('grade')->values();
+        return response()->json($grades, 200);
+    }
+
+    public function getAllGrades()
+    {
+        $grades = $this->comGradesInterface->All();
         return response()->json($grades, 200);
     }
 

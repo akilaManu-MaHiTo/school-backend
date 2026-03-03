@@ -876,4 +876,33 @@ class UserController extends Controller
     {
         return $this->userTypeSearch($request, 'Teacher', 'user_id_desc');
     }
+
+    public function updateUserToOldStudent(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'userIds' => 'required_without:userId|array',
+            'userIds.*' => 'integer|exists:users,id',
+            'userId' => 'required_without:userIds|array',
+            'userId.*' => 'integer|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $ids = $request->input('userIds', $request->input('userId', []));
+
+        $updatedCount = User::whereIn('id', $ids)->update([
+            'employeeType' => 'OldStudent',
+        ]);
+
+        return response()->json([
+            'message' => 'Users updated to OldStudent successfully',
+            'updatedCount' => $updatedCount,
+            'userIds' => $ids,
+        ], 200);
+    }
 }

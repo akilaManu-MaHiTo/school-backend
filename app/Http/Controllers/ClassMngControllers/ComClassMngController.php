@@ -24,10 +24,16 @@ class ComClassMngController extends Controller
     public function index()
     {
         $classes = $this->comClassMngInterface->All();
-        $classes = $classes->sortBy('className')->values();
+        // Exclude the class with ID 1 from the results
+        $classes = $classes->where('id', '!=', 1)->sortBy('className')->values();
         return response()->json($classes, 200);
     }
 
+    public function getAllClasses()
+    {
+        $classes = $this->comClassMngInterface->All();
+        return response()->json($classes, 200);
+    }
     /**
      * Get classes by grade range mapped to classCategory.
      *

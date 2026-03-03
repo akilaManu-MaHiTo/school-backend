@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Auth;
 
 class StudentNotificationsController extends Controller
 {
+    private const ALL_GRADE_ID = 1;
+
+    private const ALL_CLASS_ID = 1;
+
     /**
      * Display a listing of the resource.
      */
@@ -153,11 +157,15 @@ class StudentNotificationsController extends Controller
         if ($request->filled('year')) {
             $profileQuery->where('academicYear', $request->input('year'));
         }
-        if ($request->filled('gradeId')) {
-            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+
+        $gradeId = $request->input('gradeId');
+        if ($gradeId !== null && $gradeId !== '' && strtolower((string) $gradeId) !== 'all' && (int) $gradeId !== self::ALL_GRADE_ID) {
+            $profileQuery->where('academicGradeId', $gradeId);
         }
-        if ($request->filled('classId')) {
-            $profileQuery->where('academicClassId', $request->input('classId'));
+
+        $classId = $request->input('classId');
+        if ($classId !== null && $classId !== '' && strtolower((string) $classId) !== 'all' && (int) $classId !== self::ALL_CLASS_ID) {
+            $profileQuery->where('academicClassId', $classId);
         }
 
         // Get all matching profiles for the student (one student can have many profiles)
@@ -176,8 +184,14 @@ class StudentNotificationsController extends Controller
                 foreach ($profiles as $profile) {
                     $query->orWhere(function ($nested) use ($profile) {
                         $nested->where('year', $profile->academicYear)
-                            ->where('gradeId', $profile->academicGradeId)
-                            ->where('classId', $profile->academicClassId);
+                            ->where(function ($gradeQuery) use ($profile) {
+                                $gradeQuery->where('gradeId', $profile->academicGradeId)
+                                    ->orWhere('gradeId', self::ALL_GRADE_ID);
+                            })
+                            ->where(function ($classQuery) use ($profile) {
+                                $classQuery->where('classId', $profile->academicClassId)
+                                    ->orWhere('classId', self::ALL_CLASS_ID);
+                            });
                     });
                 }
             })
@@ -211,11 +225,15 @@ class StudentNotificationsController extends Controller
         if ($request->filled('year')) {
             $profileQuery->where('academicYear', $request->input('year'));
         }
-        if ($request->filled('gradeId')) {
-            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+
+        $gradeId = $request->input('gradeId');
+        if ($gradeId !== null && $gradeId !== '' && strtolower((string) $gradeId) !== 'all' && (int) $gradeId !== self::ALL_GRADE_ID) {
+            $profileQuery->where('academicGradeId', $gradeId);
         }
-        if ($request->filled('classId')) {
-            $profileQuery->where('academicClassId', $request->input('classId'));
+
+        $classId = $request->input('classId');
+        if ($classId !== null && $classId !== '' && strtolower((string) $classId) !== 'all' && (int) $classId !== self::ALL_CLASS_ID) {
+            $profileQuery->where('academicClassId', $classId);
         }
 
         // Get all matching profiles for the student
@@ -234,8 +252,14 @@ class StudentNotificationsController extends Controller
                 foreach ($profiles as $profile) {
                     $query->orWhere(function ($nested) use ($profile) {
                         $nested->where('year', $profile->academicYear)
-                            ->where('gradeId', $profile->academicGradeId)
-                            ->where('classId', $profile->academicClassId);
+                            ->where(function ($gradeQuery) use ($profile) {
+                                $gradeQuery->where('gradeId', $profile->academicGradeId)
+                                    ->orWhere('gradeId', self::ALL_GRADE_ID);
+                            })
+                            ->where(function ($classQuery) use ($profile) {
+                                $classQuery->where('classId', $profile->academicClassId)
+                                    ->orWhere('classId', self::ALL_CLASS_ID);
+                            });
                     });
                 }
             })
@@ -277,11 +301,15 @@ class StudentNotificationsController extends Controller
         if ($request->filled('year')) {
             $profileQuery->where('academicYear', $request->input('year'));
         }
-        if ($request->filled('gradeId')) {
-            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+
+        $gradeId = $request->input('gradeId');
+        if ($gradeId !== null && $gradeId !== '' && strtolower((string) $gradeId) !== 'all' && (int) $gradeId !== self::ALL_GRADE_ID) {
+            $profileQuery->where('academicGradeId', $gradeId);
         }
-        if ($request->filled('classId')) {
-            $profileQuery->where('academicClassId', $request->input('classId'));
+
+        $classId = $request->input('classId');
+        if ($classId !== null && $classId !== '' && strtolower((string) $classId) !== 'all' && (int) $classId !== self::ALL_CLASS_ID) {
+            $profileQuery->where('academicClassId', $classId);
         }
 
         $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
@@ -298,8 +326,14 @@ class StudentNotificationsController extends Controller
                 foreach ($profiles as $profile) {
                     $query->orWhere(function ($nested) use ($profile) {
                         $nested->where('year', $profile->academicYear)
-                            ->where('gradeId', $profile->academicGradeId)
-                            ->where('classId', $profile->academicClassId);
+                            ->where(function ($gradeQuery) use ($profile) {
+                                $gradeQuery->where('gradeId', $profile->academicGradeId)
+                                    ->orWhere('gradeId', self::ALL_GRADE_ID);
+                            })
+                            ->where(function ($classQuery) use ($profile) {
+                                $classQuery->where('classId', $profile->academicClassId)
+                                    ->orWhere('classId', self::ALL_CLASS_ID);
+                            });
                     });
                 }
             })
@@ -426,11 +460,15 @@ class StudentNotificationsController extends Controller
         if ($request->filled('year')) {
             $profileQuery->where('academicYear', $request->input('year'));
         }
-        if ($request->filled('gradeId')) {
-            $profileQuery->where('academicGradeId', $request->input('gradeId'));
+
+        $gradeId = $request->input('gradeId');
+        if ($gradeId !== null && $gradeId !== '' && strtolower((string) $gradeId) !== 'all' && (int) $gradeId !== self::ALL_GRADE_ID) {
+            $profileQuery->where('academicGradeId', $gradeId);
         }
-        if ($request->filled('classId')) {
-            $profileQuery->where('academicClassId', $request->input('classId'));
+
+        $classId = $request->input('classId');
+        if ($classId !== null && $classId !== '' && strtolower((string) $classId) !== 'all' && (int) $classId !== self::ALL_CLASS_ID) {
+            $profileQuery->where('academicClassId', $classId);
         }
 
         $profiles = $profileQuery->get(['academicYear', 'academicGradeId', 'academicClassId']);
@@ -447,8 +485,14 @@ class StudentNotificationsController extends Controller
                 foreach ($profiles as $profile) {
                     $query->orWhere(function ($nested) use ($profile) {
                         $nested->where('year', $profile->academicYear)
-                            ->where('gradeId', $profile->academicGradeId)
-                            ->where('classId', $profile->academicClassId);
+                            ->where(function ($gradeQuery) use ($profile) {
+                                $gradeQuery->where('gradeId', $profile->academicGradeId)
+                                    ->orWhere('gradeId', self::ALL_GRADE_ID);
+                            })
+                            ->where(function ($classQuery) use ($profile) {
+                                $classQuery->where('classId', $profile->academicClassId)
+                                    ->orWhere('classId', self::ALL_CLASS_ID);
+                            });
                     });
                 }
             })
@@ -464,25 +508,48 @@ class StudentNotificationsController extends Controller
         );
     }
 
-    public function getNotificationsCreatedBy(Request $request): JsonResponse
+    public function getNotificationsCreatedBy(Request $request, $year = null, $gradeId = null, $classId = null): JsonResponse
     {
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        // Prefer route parameters, but fall back to query params if provided.
+        $year = $year ?? $request->query('year');
+        $gradeId = $gradeId ?? $request->query('gradeId');
+        $classId = $classId ?? $request->query('classId');
+
+        $normalize = static function ($value) {
+            if ($value === null) {
+                return null;
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '' || $value === 'undefined' || $value === 'null') {
+                return null;
+            }
+
+            return $value;
+        };
+
+        $year = $normalize($year);
+        $gradeId = $normalize($gradeId);
+        $classId = $normalize($classId);
+
         $query = StudentNotifications::with(['grade', 'class', 'createdByUser'])
             ->where('createdBy', $user->id)
             ->orderByDesc('created_at');
 
-        if ($request->filled('year')) {
-            $query->where('year', $request->input('year'));
+        if ($year !== null) {
+            $query->where('year', $year);
         }
-        if ($request->filled('gradeId')) {
-            $query->where('gradeId', $request->input('gradeId'));
+        if ($gradeId !== null) {
+            $query->where('gradeId', $gradeId);
         }
-        if ($request->filled('classId')) {
-            $query->where('classId', $request->input('classId'));
+        if ($classId !== null) {
+            $query->where('classId', $classId);
         }
 
         return response()->json(

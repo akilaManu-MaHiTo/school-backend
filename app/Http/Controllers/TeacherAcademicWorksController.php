@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TeacherAcademicWorks\TeacherAcademicWorksRequest;
 use App\Models\ComStudentProfile;
+use App\Models\ComTeacherProfile;
 use App\Models\TeacherAcademicWorks;
 use App\Repositories\All\TeacherAcademicWorks\TeacherAcademicWorksInterface;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,14 @@ class TeacherAcademicWorksController extends Controller
 
     public function getTeacherWorksByDate(string $date): JsonResponse
     {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
         if (trim($date) === '') {
             return response()->json([
                 'success' => false,
@@ -53,6 +62,7 @@ class TeacherAcademicWorksController extends Controller
         }
 
         $works = TeacherAcademicWorks::with(['teacher', 'subject', 'createdByUser'])
+            ->where('createdBy', $user->id)
             ->where(function ($query) use ($normalizedDate) {
                 $query->where('date', $normalizedDate)
                     ->orWhere('date', 'like', $normalizedDate . '%')
@@ -105,6 +115,70 @@ class TeacherAcademicWorksController extends Controller
             ->get();
 
         return response()->json($works, 200);
+    }
+
+    public function getTeacherByStudentIdAndSubjectId(int $subjectId, int $studentId, string $year): JsonResponse
+    {
+        if ($subjectId <= 0 || $studentId <= 0 || trim($year) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subject ID, student ID and academic year are required.',
+            ], 422);
+        }
+
+        $studentProfile = ComStudentProfile::query()
+            ->where('studentId', $studentId)
+            ->where('academicYear', $year)
+            ->first();
+
+        if (! $studentProfile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student profile not found for the given year.',
+            ], 404);
+        }
+
+        $teacherProfiles = ComTeacherProfile::query()
+            ->with(['teacher', 'grade', 'subject', 'class'])
+            ->where('academicYear', $year)
+            ->where('academicGradeId', $studentProfile->academicGradeId)
+            ->where('academicClassId', $studentProfile->academicClassId)
+            ->where('academicMedium', $studentProfile->academicMedium)
+            ->where('academicSubjectId', $subjectId)
+            ->get();
+
+        if ($teacherProfiles->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher not found for the given student, subject and year.',
+            ], 404);
+        }
+
+        $teachers = $teacherProfiles
+            ->pluck('teacher')
+            ->filter()
+            ->unique('id')
+            ->values()
+            ->map(function ($teacher) {
+                return [
+                    'id'               => $teacher->id,
+                    'name'             => $teacher->name,
+                    'userName'         => $teacher->userName,
+                    'nameWithInitials' => $teacher->nameWithInitials,
+                    'email'            => $teacher->email,
+                    'employeeType'     => $teacher->employeeType,
+                    'employeeNumber'   => $teacher->employeeNumber,
+                ];
+            });
+
+        if ($teachers->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher user record not found.',
+            ], 404);
+        }
+
+        return response()->json($teachers, 200);
     }
 
     /**
