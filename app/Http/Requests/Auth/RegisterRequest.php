@@ -48,6 +48,8 @@ class RegisterRequest extends FormRequest
             'employeeNumber.unique'       => 'Employee number already exists.',
 
             'nameWithInitials.required'   => 'Name with initials is required.',
+
+            'nationalId.unique'          => 'National ID already exists.',
         ];
     }
 }

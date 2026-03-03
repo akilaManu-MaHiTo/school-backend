@@ -388,6 +388,20 @@ class UserController extends Controller
             }
         }
 
+        $nationalId = $request->input('nationalId', $user->nationalId);
+
+        if ($nationalId !== $user->nationalId) {
+            $exists = User::where('nationalId', $nationalId)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'message' => 'National ID is already exists.',
+                ], 422);
+            }
+        }
+
         $user->name = $request->input('name', $user->name);
         $user->mobile = $request->input('mobile', $user->mobile);
         $user->gender = $request->input('gender', $user->gender);
@@ -396,7 +410,7 @@ class UserController extends Controller
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
         $user->dateOfRegister = $request->input('dateOfRegister', $user->dateOfRegister);
-        $user->nationalId = $request->input('nationalId', $user->nationalId);
+        $user->nationalId = $nationalId;
         $user->profileImage = ! empty($newImages)
             ? array_values($newImages)
             : array_values($existingImages);
