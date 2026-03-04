@@ -6,6 +6,7 @@ use App\Models\ComAssigneeLevel;
 use App\Models\ComClassMng;
 use App\Models\ComGrades;
 use App\Models\ComOrganization;
+use App\Models\ComPaymentCategory;
 use App\Models\ComPermission;
 use App\Models\ComResponsibleSection;
 use App\Models\User;
@@ -153,6 +154,11 @@ class DatabaseSeeder extends Seeder
             'id'        => 1,
             'className' => 'All',
             'classCategory' => 'All',
+            'createdBy' => 1,
+        ]);
+        ComPaymentCategory::factory()->create([
+            'id'        => 1,
+            'categoryName' => 'School Service Charges Fees',
             'createdBy' => 1,
         ]);
         ComResponsibleSection::factory()->create([
