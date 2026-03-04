@@ -6,6 +6,7 @@ use App\Http\Requests\StudentServiceCharges\StudentServiceChargesRequest;
 use App\Models\StudentServiceCharges;
 use App\Models\ComStudentProfile;
 use App\Models\ComParentProfile;
+use App\Models\ComPaymentCategory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class StudentServiceChargesController extends Controller
      */
     public function index(): JsonResponse
     {
-        $charges = StudentServiceCharges::with('student')
+        $charges = StudentServiceCharges::with(['student', 'category'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -47,10 +48,13 @@ class StudentServiceChargesController extends Controller
         }
 
         $payload = $request->validated();
-        $category = $payload['chargesCategory'] ?? null;
+        $categoryId = $payload['chargesCategoryId'] ?? null;
+
+        // Load category to check category name for special handling
+        $category = $categoryId ? ComPaymentCategory::find($categoryId) : null;
 
         // Special flow for School Service Charges Fees
-        if ($category === 'School Service Charges Fees') {
+        if ($category && $category->categoryName === 'School Service Charges Fees') {
             $primaryStudentId = $payload['studentId'];
 
             // Find parent(s) linked to this student
@@ -72,7 +76,7 @@ class StudentServiceChargesController extends Controller
 
                 // Exclude students who already have this charge for the same year
                 $alreadyChargedIds = StudentServiceCharges::whereIn('studentId', $allChildIds)
-                    ->where('chargesCategory', $category)
+                    ->where('chargesCategoryId', $categoryId)
                     ->where('yearForCharge', $payload['yearForCharge'])
                     ->pluck('studentId')
                     ->unique();
@@ -151,7 +155,8 @@ class StudentServiceChargesController extends Controller
                         'success'               => false,
                         'requiresConfirmation'  => true,
                         'message'               => 'This parent has multiple students without this service charge. Confirm if you want to add charges for them as well.',
-                        'category'              => $category,
+                        'category'              => $category->categoryName,
+                        'categoryId'            => $categoryId,
                         'yearForCharge'         => $payload['yearForCharge'],
                         'pendingStudentIds'     => $pendingStudentIds,
                         'children'              => $children,
@@ -215,7 +220,7 @@ class StudentServiceChargesController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $charge = StudentServiceCharges::with('student')->findOrFail($id);
+            $charge = StudentServiceCharges::with(['student', 'category'])->findOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return response()->json([
                 'success' => false,
@@ -234,7 +239,7 @@ class StudentServiceChargesController extends Controller
      */
     public function getChargesByStudentId(int $id): JsonResponse
     {
-        $charges = StudentServiceCharges::with('student')
+        $charges = StudentServiceCharges::with(['student', 'category'])
             ->where('studentId', $id)
             ->orderByDesc('created_at')
             ->get();
@@ -248,7 +253,7 @@ class StudentServiceChargesController extends Controller
      *
      * Route: GET student-service-charges/{year}/{gradeId}/{classId}/{category}/check
      * - category = "All"  -> return all charges for that year
-     * - category = actual category name -> filter charges by that category
+     * - category = category ID (integer) -> filter charges by that category ID
      */
     public function checkChargesByYearGradeClass(string $year, int $gradeId, int $classId, string $category): JsonResponse
     {
@@ -264,12 +269,12 @@ class StudentServiceChargesController extends Controller
 
         $studentIds = $studentProfiles->pluck('studentId')->all();
 
-        $chargesQuery = StudentServiceCharges::with('student')
+        $chargesQuery = StudentServiceCharges::with(['student', 'category'])
             ->whereIn('studentId', $studentIds)
             ->where('yearForCharge', $year);
 
         if ($category !== 'All') {
-            $chargesQuery->where('chargesCategory', $category);
+            $chargesQuery->where('chargesCategoryId', (int) $category);
         }
 
         $chargesByStudent = $chargesQuery
