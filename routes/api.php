@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users', [AdminController::class, 'index']);
     Route::post('users/{id}/update', [AdminController::class, 'update']);
     Route::get('users-assignee-level', [AdminController::class, 'assigneeLevel']);
+    Route::delete('users/{id}/delete', [AdminController::class, 'destroy']);
 
     Route::post('user/{id}/profile-update-by-admin', [UserController::class, 'profileUpdateByAdmin']);
 });
