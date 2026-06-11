@@ -638,14 +638,15 @@ class ClassReportController extends Controller
                 }
             }
 
-            $average = $marksCount > 0 ? $totalMarks / $studentCount : 0.0;
+            $average = $marksCount > 0 ? $totalMarks / $marksCount : 0.0;
 
             $markData[] = [
                 'userName'         => $student?->userName,
-                'admissionNumber'      => $student->employeeNumber,
+                'admissionNumber'  => $student->employeeNumber,
                 'email'            => $student?->email,
                 'nameWithInitials' => $student?->nameWithInitials,
                 'marks'            => [$marksObject],
+                'totalMarks'       => $totalMarks,
                 'averageOfMarks'   => $average,
                 'position'         => null,
             ];

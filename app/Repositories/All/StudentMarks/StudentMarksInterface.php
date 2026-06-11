@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Collection;
 interface StudentMarksInterface extends EloquentRepositoryInterface
 {
     public function findByStudent(int $studentProfileId): Collection;
+
+    public function existsByStudentSubjectYearTerm(
+        int $studentProfileId,
+        int $academicSubjectId,
+        string $academicYear,
+        string $academicTerm
+    ): bool;
 }

@@ -21,4 +21,19 @@ class StudentMarksRepository extends BaseRepository implements StudentMarksInter
             ->orderByDesc('created_at')
             ->get();
     }
+
+    public function existsByStudentSubjectYearTerm(
+        int $studentProfileId,
+        int $academicSubjectId,
+        string $academicYear,
+        string $academicTerm
+    ): bool
+    {
+        return $this->model->newQuery()
+            ->where('studentProfileId', $studentProfileId)
+            ->where('academicSubjectId', $academicSubjectId)
+            ->where('academicYear', $academicYear)
+            ->where('academicTerm', $academicTerm)
+            ->exists();
+    }
 }
