@@ -109,6 +109,7 @@ use App\Http\Controllers\StudentMarksController;
 use App\Http\Controllers\StudentNotificationsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClassReportController;
+use App\Http\Controllers\GradeColorSchemaController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\ParentReportController;
 use App\Http\Controllers\ComTeacherDetailsController;
@@ -471,5 +472,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('old-students', [OldStudentsController::class, 'index']);
 
     Route::get('teacher-by-student/{subjectId}/{studentId}/{year}', [TeacherAcademicWorksController::class, 'getTeacherByStudentIdAndSubjectId']);
+
+    Route::get('grade-color-schema', [GradeColorSchemaController::class, 'index']);
+    Route::post('grade-color-schema/{id}', [GradeColorSchemaController::class, 'update']);
+    Route::delete('grade-color-schema/{id}', [GradeColorSchemaController::class, 'destroy']);
 
 });

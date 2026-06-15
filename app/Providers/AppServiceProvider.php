@@ -22,6 +22,8 @@ use App\Repositories\All\ComAcademicYear\ComAcademicYearInterface;
 use App\Repositories\All\ComAcademicYear\ComAcademicYearRepository;
 use App\Repositories\All\ComDepartment\DepartmentInterface;
 use App\Repositories\All\ComDepartment\DepartmentRepository;
+use App\Repositories\All\GradeColorSchema\GradeColorSchemaInterface;
+use App\Repositories\All\GradeColorSchema\GradeColorSchemaRepository;
 use App\Repositories\All\ComGrades\ComGradesInterface;
 use App\Repositories\All\ComGrades\ComGradesRepository;
 use App\Repositories\All\ComClassMng\ComClassMngInterface;
@@ -297,6 +299,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SupplierTypeInterface::class, SupplierTypeRepository::class);
 
         $this->app->bind(ComGradesInterface::class, ComGradesRepository::class);
+        $this->app->bind(GradeColorSchemaInterface::class, GradeColorSchemaRepository::class);
         $this->app->bind(TeacherAcademicWorksInterface::class, TeacherAcademicWorksRepository::class);
         $this->app->bind(ComClassMngInterface::class, ComClassMngRepository::class);
         $this->app->bind(ComAcademicYearInterface::class, ComAcademicYearRepository::class);
