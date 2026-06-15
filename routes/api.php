@@ -474,7 +474,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teacher-by-student/{subjectId}/{studentId}/{year}', [TeacherAcademicWorksController::class, 'getTeacherByStudentIdAndSubjectId']);
 
     Route::get('grade-color-schema', [GradeColorSchemaController::class, 'index']);
-    Route::post('grade-color-schema/{id}', [GradeColorSchemaController::class, 'update']);
-    Route::delete('grade-color-schema/{id}', [GradeColorSchemaController::class, 'destroy']);
+    Route::post('grade-color-schema/{gradeColorSchema}', [GradeColorSchemaController::class, 'update']);
+    Route::delete('grade-color-schema/{gradeColorSchema}', [GradeColorSchemaController::class, 'destroy']);
 
 });

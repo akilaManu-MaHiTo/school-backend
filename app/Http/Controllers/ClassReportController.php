@@ -6,6 +6,7 @@ use App\Models\ComClassMng;
 use App\Models\ComClassTeacher;
 use App\Models\ComGrades;
 use App\Models\ComStudentProfile;
+use App\Models\GradeColorSchema;
 use App\Models\StudentMarks;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -275,6 +276,7 @@ class ClassReportController extends Controller
     public function getClassReportCard(string $year, int $gradeId, int $classId, string $examType): JsonResponse
     {
         $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
+        $gradeColorSchemas = GradeColorSchema::query()->get();
 
         if ($studentProfiles->isEmpty()) {
             return response()->json([
@@ -290,7 +292,7 @@ class ClassReportController extends Controller
 
         $studentCount = $studentProfiles->count();
         $subjects     = $this->buildSubjectsPayload($marks);
-        $markData     = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+        $markData     = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount, $gradeColorSchemas);
         $markData     = $this->assignPositions($markData);
 
         $data = [
@@ -315,6 +317,7 @@ class ClassReportController extends Controller
     public function getClassAllReportCard(string $year, int $gradeId, int $classId): JsonResponse
     {
         $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
+        $gradeColorSchemas = GradeColorSchema::query()->get();
 
         if ($studentProfiles->isEmpty()) {
             return response()->json([
@@ -356,7 +359,7 @@ class ClassReportController extends Controller
             }
 
             $subjects = $this->buildSubjectsPayload($marks);
-            $markData = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+            $markData = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount, $gradeColorSchemas);
             $markData = $this->assignPositions($markData);
 
             $result[$key] = [
@@ -588,9 +591,10 @@ class ClassReportController extends Controller
     /**
      * @param Collection<int, ComStudentProfile> $studentProfiles
      * @param Collection<int, StudentMarks>      $marks
+     * @param Collection<int, GradeColorSchema>  $gradeColorSchemas
      * @return array<int, array<string, mixed>>
      */
-    private function buildMarkDataPayload(Collection $studentProfiles, Collection $marks, int $studentCount): array
+    private function buildMarkDataPayload(Collection $studentProfiles, Collection $marks, int $studentCount, Collection $gradeColorSchemas): array
     {
         $marksByStudent = $marks->groupBy('studentProfileId');
 
@@ -619,12 +623,18 @@ class ClassReportController extends Controller
                 }
 
                 $displayMark = $isAbsent ? 'Ab' : $numericMark;
+                $gradingColor = null;
+
+                if ($numericMark !== null && ! $isAbsent) {
+                    $gradingColor = $this->resolveGradingColorByMark($numericMark, $gradeColorSchemas);
+                }
 
                 $subjectKey                = $subject->subjectName;
                 $marksObject[$subjectKey] = [
                     'marks'   => $displayMark,
                     'subject' => $subject->subjectName,
                     'isBasketSubject' => (bool)($subject->isBasketSubject ?? false),
+                    'gradingColor' => $gradingColor,
                 ];
 
                 if ($subject->isBasketSubject ?? false) {
@@ -633,6 +643,7 @@ class ClassReportController extends Controller
                         $marksObject[$groupKey] = [
                             'marks'   => $displayMark,
                             'subject' => $subject->subjectName,
+                            'gradingColor' => $gradingColor,
                         ];
                     }
                 }
@@ -653,6 +664,67 @@ class ClassReportController extends Controller
         }
 
         return $markData;
+    }
+
+    /**
+     * Resolve mark color from configured grade color schema ranges.
+     * Supported marksRange formats: "80-100", "80 to 100", ">=80", "<=50", "80+".
+     */
+    private function resolveGradingColorByMark(float $mark, Collection $gradeColorSchemas): ?string
+    {
+        foreach ($gradeColorSchemas as $schema) {
+            $range = trim((string) ($schema->marksRange ?? ''));
+            if ($range === '') {
+                continue;
+            }
+
+            if ($this->isMarkWithinRange($mark, $range)) {
+                return $schema->color;
+            }
+        }
+
+        return null;
+    }
+
+    private function isMarkWithinRange(float $mark, string $range): bool
+    {
+        $normalized = strtolower(trim($range));
+
+        if (preg_match('/^(-?\d+(?:\.\d+)?)\s*(?:-|to)\s*(-?\d+(?:\.\d+)?)$/i', $normalized, $matches)) {
+            $min = (float) $matches[1];
+            $max = (float) $matches[2];
+            if ($min > $max) {
+                [$min, $max] = [$max, $min];
+            }
+
+            return $mark >= $min && $mark <= $max;
+        }
+
+        if (preg_match('/^>=\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark >= (float) $matches[1];
+        }
+
+        if (preg_match('/^>\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark > (float) $matches[1];
+        }
+
+        if (preg_match('/^<=\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark <= (float) $matches[1];
+        }
+
+        if (preg_match('/^<\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark < (float) $matches[1];
+        }
+
+        if (preg_match('/^(-?\d+(?:\.\d+)?)\+$/', $normalized, $matches)) {
+            return $mark >= (float) $matches[1];
+        }
+
+        if (preg_match('/^-?\d+(?:\.\d+)?$/', $normalized)) {
+            return $mark === (float) $normalized;
+        }
+
+        return false;
     }
 
     /**
