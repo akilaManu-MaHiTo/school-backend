@@ -395,44 +395,66 @@ class ClassReportController extends Controller
      */
     public function getMarksGradeTable(string $year, int $gradeId, int $classId, string $examType): JsonResponse
     {
-        $studentProfileIds = ComStudentProfile::query()
+        $studentProfiles = ComStudentProfile::query()
             ->where('academicGradeId', $gradeId)
             ->where('academicClassId', $classId)
             ->where('academicYear', $year)
-            ->pluck('id');
+            ->get();
 
-        if ($studentProfileIds->isEmpty()) {
-            return response()->json();
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([]);
         }
 
         $grades = ['A', 'B', 'C', 'S', 'F'];
 
         $rows = StudentMarks::query()
             ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
-            ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+            ->whereIn('student_marks.studentProfileId', $studentProfiles->pluck('id'))
             ->where('student_marks.academicYear', $year)
             ->where('student_marks.academicTerm', $examType)
             ->where('student_marks.isAbsentStudent', false)
             ->whereNotNull('student_marks.studentMark')
             ->whereNotNull('student_marks.markGrade')
-            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, student_marks.markGrade as markGrade, COUNT(*) as gradeCount')
-            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'student_marks.markGrade')
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.isBasketSubject as isBasketSubject, student_marks.studentProfileId as studentProfileId, student_marks.markGrade as markGrade')
             ->get();
 
         $grouped = $rows->groupBy('subjectId');
 
-        $data = $grouped->map(function (Collection $items) use ($grades) {
+        $data = $grouped->map(function (Collection $items) use ($grades, $studentProfiles) {
             $first = $items->first();
+            $subjectId = (int) $first->subjectId;
+
+            $basketSubjectProfiles = $studentProfiles->filter(function (ComStudentProfile $studentProfile) use ($subjectId) {
+                $basketSubjectIds = $this->normalizeBasketSubjectIds($studentProfile->basketSubjectsIds ?? null);
+
+                return in_array($subjectId, $basketSubjectIds, true);
+            })->values();
+
+            $profilesForSubject = $basketSubjectProfiles->isNotEmpty()
+                ? $basketSubjectProfiles
+                : $studentProfiles;
+
+            $profileIdsForSubject = $profilesForSubject->pluck('id')->all();
+            $subjectItems = $items->filter(fn ($item) => in_array((int) $item->studentProfileId, $profileIdsForSubject, true))->values();
+
+            $studentCount = $studentProfiles->count();
+            $seatedCountTotal = $basketSubjectProfiles->isNotEmpty()
+                ? $basketSubjectProfiles->count()
+                : $studentProfiles->count();
 
             $gradeCounts = [];
-            foreach ($items as $item) {
-                $grade                       = strtoupper((string) $item->markGrade);
-                $gradeCounts[$grade] = (int) $item->gradeCount;
+            $seatedCount = 0;
+
+            foreach ($subjectItems as $item) {
+                $grade = strtoupper((string) $item->markGrade);
+                $gradeCounts[$grade] = ($gradeCounts[$grade] ?? 0) + 1;
+                $seatedCount++;
             }
 
             $row = [
-                'subjectId'   => $first->subjectId,
+                'subjectId'   => $subjectId,
                 'subjectName' => $first->subjectName,
+                'seatedCount'  => $seatedCount . '/' . $seatedCountTotal,
             ];
 
             foreach ($grades as $grade) {
@@ -445,6 +467,28 @@ class ClassReportController extends Controller
         return response()->json(
             $data,
         );
+    }
+
+    /**
+     * @param mixed $rawIds
+     * @return array<int, int>
+     */
+    private function normalizeBasketSubjectIds(mixed $rawIds): array
+    {
+        if (empty($rawIds)) {
+            return [];
+        }
+
+        if (is_string($rawIds)) {
+            $decoded = json_decode($rawIds, true);
+            $rawIds = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (! is_array($rawIds)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('intval', $rawIds), fn (int $id) => $id > 0));
     }
 
     /**
