@@ -650,7 +650,7 @@ class ClassReportController extends Controller
 
             $marksObject = [];
             $totalMarks  = 0.0;
-            $marksCount  = 0;
+            $subjectCount = 0;
 
             foreach ($studentMarks as $mark) {
                 $subject = $mark->subject;
@@ -663,13 +663,16 @@ class ClassReportController extends Controller
 
                 if ($numericMark !== null && ! $isAbsent) {
                     $totalMarks += $numericMark;
-                    $marksCount++;
                 }
+
+                $subjectCount++;
 
                 $displayMark = $isAbsent ? 'Ab' : $numericMark;
                 $gradingColor = null;
 
-                if ($numericMark !== null && ! $isAbsent) {
+                if ($isAbsent) {
+                    $gradingColor = $this->resolveGradingColorForAbsentMark($gradeColorSchemas);
+                } elseif ($numericMark !== null) {
                     $gradingColor = $this->resolveGradingColorByMark($numericMark, $gradeColorSchemas);
                 }
 
@@ -693,7 +696,7 @@ class ClassReportController extends Controller
                 }
             }
 
-            $average = $marksCount > 0 ? $totalMarks / $marksCount : 0.0;
+            $average = $subjectCount > 0 ? $totalMarks / $subjectCount : 0.0;
 
             $markData[] = [
                 'userName'         => $student?->userName,
@@ -723,6 +726,18 @@ class ClassReportController extends Controller
             }
 
             if ($this->isMarkWithinRange($mark, $range)) {
+                return $schema->color;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveGradingColorForAbsentMark(Collection $gradeColorSchemas): ?string
+    {
+        foreach ($gradeColorSchemas as $schema) {
+            $range = strtolower(trim((string) ($schema->marksRange ?? '')));
+            if (in_array($range, ['ab', 'absent'], true)) {
                 return $schema->color;
             }
         }

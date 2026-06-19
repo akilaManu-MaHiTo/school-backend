@@ -395,7 +395,9 @@ class ComStudentProfileController extends Controller
                 'markId'            => $mark?->id,
                 'isAbsentStudent'   => $mark?->isAbsentStudent
             ];
-        })->values();
+        })
+        ->sortBy('student.employeeNumber') // Sort by employeeNumber
+        ->values();
 
         return response()->json(
             $payload,
