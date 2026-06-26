@@ -306,13 +306,13 @@ class ComSubjectsController extends Controller
 
         $directMappings = [
             'grade 1-5' => ['Grade 1-5'],
-            'grade 6-8' => ['Grade 6-8'],
-            'grade 9-10' => ['Grade 9-10'],
-            'grade 11-12' => ['Grade 11-12'],
+            'grade 6-9' => ['Grade 6-9'],
+            'grade 10-11' => ['Grade 10-11'],
+            'grade 12-13' => ['Grade 12-13'],
             '1-5' => ['Grade 1-5'],
-            '6-8' => ['Grade 6-8'],
-            '9-10' => ['Grade 9-10'],
-            '11-12' => ['Grade 11-12'],
+            '6-9' => ['Grade 6-9'],
+            '10-11' => ['Grade 10-11'],
+            '12-13' => ['Grade 12-13'],
         ];
 
         if (isset($directMappings[$normalized])) {
@@ -326,16 +326,16 @@ class ComSubjectsController extends Controller
                 return ['Grade 1-5'];
             }
 
-            if ($grade >= 6 && $grade <= 8) {
-                return ['Grade 6-8'];
+            if ($grade >= 6 && $grade <= 9) {
+                return ['Grade 6-9'];
             }
 
-            if ($grade >= 9 && $grade <= 10) {
-                return ['Grade 9-10'];
+            if ($grade >= 10 && $grade <= 11) {
+                return ['Grade 10-11'];
             }
 
-            if ($grade >= 11 && $grade <= 12) {
-                return ['Grade 11-12'];
+            if ($grade >= 12 && $grade <= 13) {
+                return ['Grade 12-12'];
             }
         }
 
