@@ -136,4 +136,30 @@ class AdminController extends Controller
             'assigneeLevels' => $sections,
         ], 200);
     }
+
+    public function destroy(string $id)
+    {
+        $user = $this->userInterface->findById($id);
+        $hasDependentData = $user->studentProfile()->exists()
+            || $user->studentProfiles()->exists()
+            || $user->oldUniversities()->exists()
+            || $user->oldOccupations()->exists();
+
+        if ($hasDependentData) {
+            return response()->json([
+                'message' => 'Cannot delete this user because they have associated data in the system',
+            ], 400);
+        }
+        try {
+            $user->delete();
+
+            return response()->json([
+                'message' => 'User deleted successfully.',
+            ], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'Cannot delete this user because they have associated data in the system',
+            ], 400);
+        }
+    }
 }

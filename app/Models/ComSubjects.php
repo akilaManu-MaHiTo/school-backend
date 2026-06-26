@@ -15,6 +15,7 @@ class ComSubjects extends Model
     protected $fillable = [
         'subjectCode',
         'subjectName',
+        'gradeCategory',
         'colorCode',
         'subjectMedium',
         'isBasketSubject',

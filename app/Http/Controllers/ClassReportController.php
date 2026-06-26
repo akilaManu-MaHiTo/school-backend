@@ -6,6 +6,7 @@ use App\Models\ComClassMng;
 use App\Models\ComClassTeacher;
 use App\Models\ComGrades;
 use App\Models\ComStudentProfile;
+use App\Models\GradeColorSchema;
 use App\Models\StudentMarks;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -275,6 +276,7 @@ class ClassReportController extends Controller
     public function getClassReportCard(string $year, int $gradeId, int $classId, string $examType): JsonResponse
     {
         $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
+        $gradeColorSchemas = GradeColorSchema::query()->get();
 
         if ($studentProfiles->isEmpty()) {
             return response()->json([
@@ -290,7 +292,7 @@ class ClassReportController extends Controller
 
         $studentCount = $studentProfiles->count();
         $subjects     = $this->buildSubjectsPayload($marks);
-        $markData     = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+        $markData     = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount, $gradeColorSchemas);
         $markData     = $this->assignPositions($markData);
 
         $data = [
@@ -315,6 +317,7 @@ class ClassReportController extends Controller
     public function getClassAllReportCard(string $year, int $gradeId, int $classId): JsonResponse
     {
         $studentProfiles = $this->getStudentProfiles($year, $gradeId, $classId);
+        $gradeColorSchemas = GradeColorSchema::query()->get();
 
         if ($studentProfiles->isEmpty()) {
             return response()->json([
@@ -356,7 +359,7 @@ class ClassReportController extends Controller
             }
 
             $subjects = $this->buildSubjectsPayload($marks);
-            $markData = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount);
+            $markData = $this->buildMarkDataPayload($studentProfiles, $marks, $studentCount, $gradeColorSchemas);
             $markData = $this->assignPositions($markData);
 
             $result[$key] = [
@@ -392,44 +395,66 @@ class ClassReportController extends Controller
      */
     public function getMarksGradeTable(string $year, int $gradeId, int $classId, string $examType): JsonResponse
     {
-        $studentProfileIds = ComStudentProfile::query()
+        $studentProfiles = ComStudentProfile::query()
             ->where('academicGradeId', $gradeId)
             ->where('academicClassId', $classId)
             ->where('academicYear', $year)
-            ->pluck('id');
+            ->get();
 
-        if ($studentProfileIds->isEmpty()) {
-            return response()->json();
+        if ($studentProfiles->isEmpty()) {
+            return response()->json([]);
         }
 
         $grades = ['A', 'B', 'C', 'S', 'F'];
 
         $rows = StudentMarks::query()
             ->join('com_subjects', 'student_marks.academicSubjectId', '=', 'com_subjects.id')
-            ->whereIn('student_marks.studentProfileId', $studentProfileIds)
+            ->whereIn('student_marks.studentProfileId', $studentProfiles->pluck('id'))
             ->where('student_marks.academicYear', $year)
             ->where('student_marks.academicTerm', $examType)
             ->where('student_marks.isAbsentStudent', false)
             ->whereNotNull('student_marks.studentMark')
             ->whereNotNull('student_marks.markGrade')
-            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, student_marks.markGrade as markGrade, COUNT(*) as gradeCount')
-            ->groupBy('student_marks.academicSubjectId', 'com_subjects.subjectName', 'student_marks.markGrade')
+            ->selectRaw('student_marks.academicSubjectId as subjectId, com_subjects.subjectName as subjectName, com_subjects.isBasketSubject as isBasketSubject, student_marks.studentProfileId as studentProfileId, student_marks.markGrade as markGrade')
             ->get();
 
         $grouped = $rows->groupBy('subjectId');
 
-        $data = $grouped->map(function (Collection $items) use ($grades) {
+        $data = $grouped->map(function (Collection $items) use ($grades, $studentProfiles) {
             $first = $items->first();
+            $subjectId = (int) $first->subjectId;
+
+            $basketSubjectProfiles = $studentProfiles->filter(function (ComStudentProfile $studentProfile) use ($subjectId) {
+                $basketSubjectIds = $this->normalizeBasketSubjectIds($studentProfile->basketSubjectsIds ?? null);
+
+                return in_array($subjectId, $basketSubjectIds, true);
+            })->values();
+
+            $profilesForSubject = $basketSubjectProfiles->isNotEmpty()
+                ? $basketSubjectProfiles
+                : $studentProfiles;
+
+            $profileIdsForSubject = $profilesForSubject->pluck('id')->all();
+            $subjectItems = $items->filter(fn ($item) => in_array((int) $item->studentProfileId, $profileIdsForSubject, true))->values();
+
+            $studentCount = $studentProfiles->count();
+            $seatedCountTotal = $basketSubjectProfiles->isNotEmpty()
+                ? $basketSubjectProfiles->count()
+                : $studentProfiles->count();
 
             $gradeCounts = [];
-            foreach ($items as $item) {
-                $grade                       = strtoupper((string) $item->markGrade);
-                $gradeCounts[$grade] = (int) $item->gradeCount;
+            $seatedCount = 0;
+
+            foreach ($subjectItems as $item) {
+                $grade = strtoupper((string) $item->markGrade);
+                $gradeCounts[$grade] = ($gradeCounts[$grade] ?? 0) + 1;
+                $seatedCount++;
             }
 
             $row = [
-                'subjectId'   => $first->subjectId,
+                'subjectId'   => $subjectId,
                 'subjectName' => $first->subjectName,
+                'seatedCount'  => $seatedCount . '/' . $seatedCountTotal,
             ];
 
             foreach ($grades as $grade) {
@@ -442,6 +467,28 @@ class ClassReportController extends Controller
         return response()->json(
             $data,
         );
+    }
+
+    /**
+     * @param mixed $rawIds
+     * @return array<int, int>
+     */
+    private function normalizeBasketSubjectIds(mixed $rawIds): array
+    {
+        if (empty($rawIds)) {
+            return [];
+        }
+
+        if (is_string($rawIds)) {
+            $decoded = json_decode($rawIds, true);
+            $rawIds = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (! is_array($rawIds)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('intval', $rawIds), fn (int $id) => $id > 0));
     }
 
     /**
@@ -588,9 +635,10 @@ class ClassReportController extends Controller
     /**
      * @param Collection<int, ComStudentProfile> $studentProfiles
      * @param Collection<int, StudentMarks>      $marks
+     * @param Collection<int, GradeColorSchema>  $gradeColorSchemas
      * @return array<int, array<string, mixed>>
      */
-    private function buildMarkDataPayload(Collection $studentProfiles, Collection $marks, int $studentCount): array
+    private function buildMarkDataPayload(Collection $studentProfiles, Collection $marks, int $studentCount, Collection $gradeColorSchemas): array
     {
         $marksByStudent = $marks->groupBy('studentProfileId');
 
@@ -602,7 +650,7 @@ class ClassReportController extends Controller
 
             $marksObject = [];
             $totalMarks  = 0.0;
-            $marksCount  = 0;
+            $subjectCount = 0;
 
             foreach ($studentMarks as $mark) {
                 $subject = $mark->subject;
@@ -615,16 +663,25 @@ class ClassReportController extends Controller
 
                 if ($numericMark !== null && ! $isAbsent) {
                     $totalMarks += $numericMark;
-                    $marksCount++;
                 }
 
+                $subjectCount++;
+
                 $displayMark = $isAbsent ? 'Ab' : $numericMark;
+                $gradingColor = null;
+
+                if ($isAbsent) {
+                    $gradingColor = $this->resolveGradingColorForAbsentMark($gradeColorSchemas);
+                } elseif ($numericMark !== null) {
+                    $gradingColor = $this->resolveGradingColorByMark($numericMark, $gradeColorSchemas);
+                }
 
                 $subjectKey                = $subject->subjectName;
                 $marksObject[$subjectKey] = [
                     'marks'   => $displayMark,
                     'subject' => $subject->subjectName,
                     'isBasketSubject' => (bool)($subject->isBasketSubject ?? false),
+                    'gradingColor' => $gradingColor,
                 ];
 
                 if ($subject->isBasketSubject ?? false) {
@@ -633,25 +690,100 @@ class ClassReportController extends Controller
                         $marksObject[$groupKey] = [
                             'marks'   => $displayMark,
                             'subject' => $subject->subjectName,
+                            'gradingColor' => $gradingColor,
                         ];
                     }
                 }
             }
 
-            $average = $marksCount > 0 ? $totalMarks / $studentCount : 0.0;
+            $average = $subjectCount > 0 ? $totalMarks / $subjectCount : 0.0;
 
             $markData[] = [
                 'userName'         => $student?->userName,
-                'admissionNumber'      => $student->employeeNumber,
+                'admissionNumber'  => $student->employeeNumber,
                 'email'            => $student?->email,
                 'nameWithInitials' => $student?->nameWithInitials,
                 'marks'            => [$marksObject],
+                'totalMarks'       => $totalMarks,
                 'averageOfMarks'   => $average,
                 'position'         => null,
             ];
         }
 
         return $markData;
+    }
+
+    /**
+     * Resolve mark color from configured grade color schema ranges.
+     * Supported marksRange formats: "80-100", "80 to 100", ">=80", "<=50", "80+".
+     */
+    private function resolveGradingColorByMark(float $mark, Collection $gradeColorSchemas): ?string
+    {
+        foreach ($gradeColorSchemas as $schema) {
+            $range = trim((string) ($schema->marksRange ?? ''));
+            if ($range === '') {
+                continue;
+            }
+
+            if ($this->isMarkWithinRange($mark, $range)) {
+                return $schema->color;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveGradingColorForAbsentMark(Collection $gradeColorSchemas): ?string
+    {
+        foreach ($gradeColorSchemas as $schema) {
+            $range = strtolower(trim((string) ($schema->marksRange ?? '')));
+            if (in_array($range, ['ab', 'absent'], true)) {
+                return $schema->color;
+            }
+        }
+
+        return null;
+    }
+
+    private function isMarkWithinRange(float $mark, string $range): bool
+    {
+        $normalized = strtolower(trim($range));
+
+        if (preg_match('/^(-?\d+(?:\.\d+)?)\s*(?:-|to)\s*(-?\d+(?:\.\d+)?)$/i', $normalized, $matches)) {
+            $min = (float) $matches[1];
+            $max = (float) $matches[2];
+            if ($min > $max) {
+                [$min, $max] = [$max, $min];
+            }
+
+            return $mark >= $min && $mark <= $max;
+        }
+
+        if (preg_match('/^>=\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark >= (float) $matches[1];
+        }
+
+        if (preg_match('/^>\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark > (float) $matches[1];
+        }
+
+        if (preg_match('/^<=\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark <= (float) $matches[1];
+        }
+
+        if (preg_match('/^<\s*(-?\d+(?:\.\d+)?)$/', $normalized, $matches)) {
+            return $mark < (float) $matches[1];
+        }
+
+        if (preg_match('/^(-?\d+(?:\.\d+)?)\+$/', $normalized, $matches)) {
+            return $mark >= (float) $matches[1];
+        }
+
+        if (preg_match('/^-?\d+(?:\.\d+)?$/', $normalized)) {
+            return $mark === (float) $normalized;
+        }
+
+        return false;
     }
 
     /**

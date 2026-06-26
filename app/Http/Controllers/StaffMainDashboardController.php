@@ -94,6 +94,7 @@ class StaffMainDashboardController extends Controller
                     'classes'       => $classes,
                 ];
             })
+            ->sortBy('grade')
             ->values();
 
         return response()->json($result, 200);

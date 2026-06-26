@@ -47,7 +47,9 @@ class ComSubjectsController extends Controller
             // Filter subjects starting with the letter
             $filtered = $comSubjects->filter(function ($item) use ($letter) {
                 return strtoupper(substr($item->subjectName, 0, 1)) === $letter;
-            })->values();
+            })
+                ->sortBy('subjectCode')
+                ->values();
 
             $result[] = [
                 'letter' => $letter,
@@ -241,6 +243,26 @@ class ComSubjectsController extends Controller
         return response()->json($comSubjects, 200);
     }
 
+    public function getSubjectsByGradeCategory($gradeCategory)
+    {
+        $comSubjects = $this->comSubjectsInterface->All();
+
+        $gradeCategories = $this->resolveGradeCategories($gradeCategory);
+
+        if (empty($gradeCategories)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid grade category.'
+            ], 400);
+        }
+
+        $filtered = $comSubjects->filter(function ($item) use ($gradeCategories) {
+            return isset($item->gradeCategory) && in_array(trim($item->gradeCategory), $gradeCategories, true);
+        })->sortBy('subjectName')->values();
+
+        return response()->json($filtered, 200);
+    }
+
     public function getSubjectsByGroup1()
     {
         $filtered = $this->filterSubjectsByGroup('Group 1');
@@ -273,5 +295,50 @@ class ComSubjectsController extends Controller
         })->sortBy('subjectName')->values();
 
         return $filtered;
+    }
+
+    /**
+     * Map a requested grade value to the stored gradeCategory enum values.
+     */
+    private function resolveGradeCategories($gradeCategory): array
+    {
+        $normalized = strtolower(trim((string) $gradeCategory));
+
+        $directMappings = [
+            'grade 1-5' => ['Grade 1-5'],
+            'grade 6-9' => ['Grade 6-9'],
+            'grade 10-11' => ['Grade 10-11'],
+            'grade 12-13' => ['Grade 12-13'],
+            '1-5' => ['Grade 1-5'],
+            '6-9' => ['Grade 6-9'],
+            '10-11' => ['Grade 10-11'],
+            '12-13' => ['Grade 12-13'],
+        ];
+
+        if (isset($directMappings[$normalized])) {
+            return $directMappings[$normalized];
+        }
+
+        if (ctype_digit($normalized)) {
+            $grade = (int) $normalized;
+
+            if ($grade >= 1 && $grade <= 5) {
+                return ['Grade 1-5'];
+            }
+
+            if ($grade >= 6 && $grade <= 9) {
+                return ['Grade 6-9'];
+            }
+
+            if ($grade >= 10 && $grade <= 11) {
+                return ['Grade 10-11'];
+            }
+
+            if ($grade >= 12 && $grade <= 13) {
+                return ['Grade 12-12'];
+            }
+        }
+
+        return [];
     }
 }

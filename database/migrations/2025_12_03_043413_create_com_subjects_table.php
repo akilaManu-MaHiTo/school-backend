@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('subjectCode')->nullable();
             $table->string('subjectMedium')->required();
+            $table->enum('gradeCategory', ['Grade 1-5', 'Grade 6-9', 'Grade 10-11', 'Grade 12-13'])->nullable();
             $table->string('subjectName')->required();
             $table->string('colorCode')->required();
             $table->boolean('isBasketSubject');

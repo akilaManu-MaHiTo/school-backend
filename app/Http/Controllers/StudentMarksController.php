@@ -39,6 +39,27 @@ class StudentMarksController extends Controller
             $payload['studentMark'] = null;
             $payload['markGrade'] = null;
         }
+
+        if (
+            isset(
+                $payload['studentProfileId'],
+                $payload['academicSubjectId'],
+                $payload['academicYear'],
+                $payload['academicTerm']
+            )
+            && $this->studentMarksInterface->existsByStudentSubjectYearTerm(
+                (int) $payload['studentProfileId'],
+                (int) $payload['academicSubjectId'],
+                (string) $payload['academicYear'],
+                (string) $payload['academicTerm']
+            )
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student mark already exists for this student, subject, year, and term.',
+            ], 422);
+        }
+
         $payload['createdByTeacher'] = $user->id;
         try {
             $mark = $this->studentMarksInterface->create($payload);
