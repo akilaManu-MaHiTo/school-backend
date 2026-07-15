@@ -43,6 +43,7 @@ class UserRepository extends BaseRepository implements UserInterface
             ->orWhere('mobile', 'like', '%' . $keyword . '%')
             ->orWhere('address', 'like', '%' . $keyword . '%')
             ->orWhere('nameWithInitials', 'like', '%' . $keyword . '%')
+            ->orWhere('employeeNumber', 'like', '%' . $keyword . '%')
             ->orWhere('userName', 'like', '%' . $keyword . '%')
             ->get();
     }
