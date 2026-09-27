@@ -256,7 +256,7 @@ class MarkCheckingReportController extends Controller
         array &$results,
         int $teacherId,
         ?string $teacherName,
-        string $teacherEmail,
+        ?string $teacherEmail,
         ?string $teacherStaffId,
         ?string $teacherMobile,
         ?string $nameWithInitials,

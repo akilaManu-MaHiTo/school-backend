@@ -477,6 +477,10 @@ class UserController extends Controller
         $user->employeeType = $request->input('employeeType', $user->employeeType);
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
+        $user->userName = $request->input('userName', $user->userName);
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->input('password'));
+        }
         $user->profileImage = ! empty($newImages)
             ? array_values($newImages)
             : array_values($existingImages);

@@ -105,12 +105,13 @@ class ComSubjectsController extends Controller
 
         $nameExists = ComSubjects::where('subjectName', $subjectName)
             ->where('subjectMedium', $data['subjectMedium'])
+            ->where('gradeCategory', $data['gradeCategory'])
             ->exists();
 
         if ($nameExists) {
             return response()->json([
                 'success' => false,
-                'message' => 'This subject name already exists for the selected medium.'
+                'message' => 'This subject name already exists for the selected medium and the Grade.'
             ], 422);
         }
 
@@ -178,6 +179,7 @@ class ComSubjectsController extends Controller
         // Check for duplicate name + medium
         $nameExists = ComSubjects::where('subjectName', $newName)
             ->where('subjectMedium', $newSubjectMedium)
+            ->where('gradeCategory', $data['gradeCategory'] ?? $subject->gradeCategory)
             ->where('id', '!=', $subject->id)
             ->exists();
 

@@ -74,12 +74,12 @@ class TeacherAcademicWorksController extends Controller
         return response()->json($works, 200);
     }
 
-    public function getTeacherWorksByAdmin(string $year, int $gradeId, int $classId, string $date): JsonResponse
+    public function myWorksByDate(int $id, string $date): JsonResponse
     {
-        if (trim($year) === '' || $gradeId <= 0 || $classId <= 0 || trim($date) === '') {
+        if ($id <= 0 || trim($date) === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'Year, grade, class, and date are required.',
+                'message' => 'Teacher ID and date are required.',
             ], 422);
         }
 
@@ -90,6 +90,90 @@ class TeacherAcademicWorksController extends Controller
                 'success' => false,
                 'message' => 'Invalid date format.',
             ], 422);
+        }
+
+        $teacherProfile = ComTeacherProfile::query()
+            ->with(['grade', 'class'])
+            ->where('teacherId', $id)
+            ->orderByDesc('academicYear')
+            ->orderByDesc('id')
+            ->first();
+
+        $works = TeacherAcademicWorks::with(['teacher', 'subject', 'createdByUser'])
+            ->where('teacherId', $id)
+            ->where(function ($query) use ($normalizedDate) {
+                $query->where('date', $normalizedDate)
+                    ->orWhere('date', 'like', $normalizedDate . '%')
+                    ->orWhereRaw('LEFT(`date`, 10) = ?', [$normalizedDate]);
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $works = $works->map(function (TeacherAcademicWorks $work) use ($teacherProfile) {
+            return [
+                'id' => $work->id,
+                'teacherId' => $work->teacherId,
+                'subjectId' => $work->subjectId,
+                'title' => $work->title,
+                'academicWork' => $work->academicWork,
+                'date' => $work->date,
+                'time' => $work->time,
+                'approved' => $work->approved,
+                'createdBy' => $work->createdBy,
+                'created_at' => $work->created_at,
+                'updated_at' => $work->updated_at,
+                'teacher' => $work->teacher,
+                'subject' => $work->subject,
+                'createdByUser' => $work->createdByUser,
+                'teacherGrade' => $teacherProfile?->grade,
+                'teacherClass' => $teacherProfile?->class,
+                'teacherProfile' => $teacherProfile,
+            ];
+        });
+
+        return response()->json($works, 200);
+    }
+
+    public function getTeacherWorksByAdmin(string $year, int $gradeId, int $classId, string $date, string $clientDate): JsonResponse
+    {
+        if (trim($year) === '' || $gradeId <= 0 || $classId <= 0 || trim($date) === '' || trim($clientDate) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Year, grade, class, date, and client date are required.',
+            ], 422);
+        }
+
+        $normalizedFilter = strtolower(trim($date));
+        $isMonthly = $normalizedFilter === 'monthly';
+        $isWeekFilter = preg_match('/^week\s*([1-4])$/i', $normalizedFilter, $weekMatches) === 1;
+        $normalizedDate = null;
+        $weekStart = null;
+        $weekEnd = null;
+
+        if ($isWeekFilter) {
+            try {
+                $clientDateCarbon = Carbon::parse($clientDate, 'UTC');
+            } catch (\Exception $exception) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid client date format.',
+                ], 422);
+            }
+
+            $weekNumber = (int) $weekMatches[1];
+            $weekStart = $clientDateCarbon->copy()->startOfMonth()->addDays(($weekNumber - 1) * 7)->startOfDay();
+            $weekEnd = $weekNumber === 4
+                ? $clientDateCarbon->copy()->endOfMonth()->endOfDay()
+                : $weekStart->copy()->addDays(6)->endOfDay();
+        } elseif (! $isMonthly) {
+            try {
+                $normalizedDate = Carbon::parse($date, 'UTC')->toDateString();
+            } catch (\Exception $exception) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid date format.',
+                ], 422);
+            }
         }
 
         $studentIds = ComStudentProfile::query()
@@ -104,17 +188,62 @@ class TeacherAcademicWorksController extends Controller
             return response()->json([], 200);
         }
 
-        $works = TeacherAcademicWorks::with(['teacher', 'subject', 'createdByUser'])
+        $query = TeacherAcademicWorks::with(['teacher', 'subject', 'createdByUser'])
             ->whereIn('createdBy', $studentIds)
-            ->where(function ($query) use ($normalizedDate) {
+            ->orderByDesc('created_at');
+
+        if ($isWeekFilter) {
+            $query->whereRaw('LEFT(`date`, 10) BETWEEN ? AND ?', [
+                $weekStart?->toDateString(),
+                $weekEnd?->toDateString(),
+            ]);
+
+            $works = $query->get();
+
+            $groupedWorks = $works
+                ->groupBy(function (TeacherAcademicWorks $work) {
+                    return $this->normalizeWorkDate($work->date);
+                })
+                ->map(function ($dailyWorks, string $workDate) {
+                    return [
+                        'date' => $workDate,
+                        'works' => $dailyWorks->values(),
+                    ];
+                })
+                ->sortBy('date')
+                ->values();
+
+            return response()->json($groupedWorks, 200);
+        }
+
+        if (! $isMonthly) {
+            $query->where(function ($query) use ($normalizedDate) {
                 $query->where('date', $normalizedDate)
                     ->orWhere('date', 'like', $normalizedDate . '%')
                     ->orWhereRaw('LEFT(`date`, 10) = ?', [$normalizedDate]);
-            })
-            ->orderByDesc('created_at')
-            ->get();
+            });
 
-        return response()->json($works, 200);
+            $works = $query->get();
+
+            return response()->json($works, 200);
+        }
+
+        $works = $query->get();
+
+        $groupedWorks = $works
+            ->groupBy(function (TeacherAcademicWorks $work) {
+                return $this->normalizeWorkDate($work->date);
+            })
+            ->map(function ($dailyWorks, string $workDate) {
+                return [
+                    'date' => $workDate,
+                    'works' => $dailyWorks->values(),
+                ];
+            })
+            ->sortBy('date')
+            ->values();
+
+        return response()->json($groupedWorks, 200);
     }
 
     public function getTeacherByStudentIdAndSubjectId(int $subjectId, int $studentId, string $year): JsonResponse
@@ -208,7 +337,7 @@ class TeacherAcademicWorksController extends Controller
      */
     public function update(TeacherAcademicWorksRequest $request, int $id): JsonResponse
     {
-        $work = TeacherAcademicWorks::find($id);
+        $work = TeacherAcademicWorks::query()->whereKey($id)->first();
         if (! $work) {
             return response()->json([
                 'success' => false,
@@ -234,7 +363,7 @@ class TeacherAcademicWorksController extends Controller
      */
     public function approveTeacherRecord(int $id): JsonResponse
     {
-        $work = TeacherAcademicWorks::find($id);
+        $work = TeacherAcademicWorks::query()->whereKey($id)->first();
 
         if (! $work) {
             return response()->json([
@@ -260,7 +389,7 @@ class TeacherAcademicWorksController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $work = TeacherAcademicWorks::find($id);
+        $work = TeacherAcademicWorks::query()->whereKey($id)->first();
         if (! $work) {
             return response()->json([
                 'success' => false,
@@ -268,11 +397,20 @@ class TeacherAcademicWorksController extends Controller
             ], 404);
         }
 
-        $work->delete();
+        TeacherAcademicWorks::query()->whereKey($id)->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Teacher academic work deleted successfully.',
         ], 200);
+    }
+
+    private function normalizeWorkDate(string $value): string
+    {
+        try {
+            return Carbon::parse($value, 'UTC')->toDateString();
+        } catch (\Exception $exception) {
+            return substr($value, 0, 10);
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminControllers\AdminController;
 use App\Http\Controllers\api\CalculationController;
+use App\Http\Controllers\api\BackupDatabaseController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -345,7 +346,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Teacher academic works
     Route::get('teacher-academic-works', [TeacherAcademicWorksController::class, 'index']);
     Route::get('teacher-academic-works-by-date/{date}', [TeacherAcademicWorksController::class, 'getTeacherWorksByDate']);
-    Route::get('teacher-academic-works-by-admin/{year}/{gradeId}/{classId}/{date}', [TeacherAcademicWorksController::class, 'getTeacherWorksByAdmin']);
+    Route::get('teacher-academic-works-by-admin/{year}/{gradeId}/{classId}/{date}/{clientDate}', [TeacherAcademicWorksController::class, 'getTeacherWorksByAdmin']);
+    Route::get('teacher-academic-works/{id}/{date}', [TeacherAcademicWorksController::class, 'myWorksByDate']);
 
     Route::post('teacher-academic-works', [TeacherAcademicWorksController::class, 'store']);
     Route::post('teacher-academic-works/{id}', [TeacherAcademicWorksController::class, 'update']);
@@ -478,4 +480,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('grade-color-schema/{gradeColorSchema}', [GradeColorSchemaController::class, 'update']);
     Route::delete('grade-color-schema/{gradeColorSchema}', [GradeColorSchemaController::class, 'destroy']);
 
+    Route::post('backup-database', [BackupDatabaseController::class, 'backupDatabase']);
 });

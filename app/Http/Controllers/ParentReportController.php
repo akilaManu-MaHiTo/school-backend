@@ -398,6 +398,7 @@ class ParentReportController extends Controller
                 $classSubjectMaxScores = $this->buildClassSubjectMaxScores($marks);
                 $studentSummary        = $this->buildStudentSummary($studentProfile->id, $studentId, $marks, $classSubjectAverages, $classSubjectMaxScores);
                 $positionInfo         = $this->calculateStudentPosition($studentProfiles, $marks, $studentProfile->id, $studentId);
+                $totalMarks           = $this->calculateStudentTotalMarks($marks, (int) $studentProfile->id);
 
                 $data = [
                     'student' => [
@@ -419,6 +420,7 @@ class ParentReportController extends Controller
                     'overall'  => [
                         'averageOfMarks' => $positionInfo['average'] ?? 0.0,
                         'position'       => $positionInfo['position'] ?? null,
+                        'totalMarks'     => $totalMarks,
                     ],
                 ];
 
@@ -439,6 +441,7 @@ class ParentReportController extends Controller
         $classSubjectMaxScores = $this->buildClassSubjectMaxScores($marks);
         $studentSummary        = $this->buildStudentSummary($studentProfile->id, $studentId, $marks, $classSubjectAverages, $classSubjectMaxScores);
         $positionInfo         = $this->calculateStudentPosition($studentProfiles, $marks, $studentProfile->id, $studentId);
+        $totalMarks            = $this->calculateStudentTotalMarks($marks, (int) $studentProfile->id);
 
         $data = [
             'student' => [
@@ -460,6 +463,7 @@ class ParentReportController extends Controller
             'overall'  => [
                 'averageOfMarks' => $positionInfo['average'] ?? 0.0,
                 'position'       => $positionInfo['position'] ?? null,
+                'totalMarks'     => $totalMarks,
             ],
         ];
 
@@ -849,5 +853,21 @@ class ParentReportController extends Controller
             'average'  => (float) $target['average'],
             'position' => (int) $target['position'],
         ];
+    }
+
+    /**
+     * Calculate the student's total marks for a term, excluding absent and null marks.
+     */
+    private function calculateStudentTotalMarks(Collection $marks, int $studentProfileId): float
+    {
+        return $marks
+            ->filter(function (StudentMarks $mark) use ($studentProfileId) {
+                return (int) $mark->studentProfileId === $studentProfileId
+                    && ! (bool) $mark->isAbsentStudent
+                    && $mark->studentMark !== null;
+            })
+            ->sum(function (StudentMarks $mark) {
+                return (float) $mark->studentMark;
+            });
     }
 }
