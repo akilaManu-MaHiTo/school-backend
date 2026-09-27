@@ -237,10 +237,10 @@ class StudentServiceChargesController extends Controller
     /**
      * Get all service charges for a given student ID.
      */
-    public function getChargesByStudentId(int $id): JsonResponse
+    public function getChargesByStudentId(int $studentId): JsonResponse
     {
         $charges = StudentServiceCharges::with(['student', 'category'])
-            ->where('studentId', $id)
+            ->where('studentId', $studentId)
             ->orderByDesc('created_at')
             ->get();
 

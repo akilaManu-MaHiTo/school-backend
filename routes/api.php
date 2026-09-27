@@ -413,6 +413,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('student-service-charges', [StudentServiceChargesController::class, 'index']);
     Route::get('student-service-charges/{id}/student', [StudentServiceChargesController::class, 'getChargesByStudentId']);
     Route::get('student-service-charges/{year}/{gradeId}/{classId}/{category}/check', [StudentServiceChargesController::class, 'checkChargesByYearGradeClass']);
+    Route::get('student-service-by-student/{studentId}', [StudentServiceChargesController::class, 'getChargesByStudentId']);
 
     Route::post('student-service-charges', [StudentServiceChargesController::class, 'store']);
     Route::get('student-service-charges/{id}', [StudentServiceChargesController::class, 'show']);
