@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nameWithInitials')->required();
             $table->string('email')->nullable()->unique();
             $table->string('password');
-            $table->enum('employeeType', ['Student', 'Teacher', 'Parent','OldStudent'])->default('Student');
+            $table->enum('employeeType', ['Student', 'Teacher', 'Parent', 'OldStudent'])->default('Student');
             $table->string('employeeNumber')->nullable()->unique();
             $table->string('mobile')->nullable();
             $table->rememberToken();
@@ -32,8 +32,10 @@ return new class extends Migration
             $table->enum('gender', ['Male', 'Female'])->nullable();
             $table->string('birthDate')->nullable();
             $table->string('address')->nullable();
+            $table->string('registerClass')->nullable();
+            $table->boolean('registerGrade')->nullable();
 
-            $table->string( 'nationalId')->nullable()->unique();
+            $table->string('nationalId')->nullable()->unique();
             $table->string('dateOfRegister')->nullable();
 
             $table->timestamps();
