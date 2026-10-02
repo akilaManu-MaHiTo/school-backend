@@ -410,6 +410,8 @@ class UserController extends Controller
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
         $user->dateOfRegister = $request->input('dateOfRegister', $user->dateOfRegister);
+        $user->registerClass = $request->input('registerClass', $user->registerClass);
+        $user->registerGrade = $request->input('registerGrade', $user->registerGrade);
         $user->nationalId = $nationalId;
         $user->profileImage = ! empty($newImages)
             ? array_values($newImages)
@@ -477,6 +479,8 @@ class UserController extends Controller
         $user->employeeType = $request->input('employeeType', $user->employeeType);
         $user->birthDate = $request->input('birthDate', $user->birthDate);
         $user->address = $request->input('address', $user->address);
+        $user->registerClass = $request->input('registerClass', $user->registerClass);
+        $user->registerGrade = $request->input('registerGrade', $user->registerGrade);
         $user->userName = $request->input('userName', $user->userName);
         if ($request->filled('password')) {
             $user->password = Hash::make($request->input('password'));
